@@ -1,4 +1,4 @@
-const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/SEU-LINK-AQUI";
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/JelwkQXy1Mj05NWybBCTQX";
 
 const links = document.querySelectorAll("[data-whatsapp-link]");
 const placeholderUrl = "https://chat.whatsapp.com/SEU-LINK-AQUI";
