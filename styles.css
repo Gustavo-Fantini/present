@@ -84,7 +84,9 @@ a {
 .signal-card,
 .feature-card,
 .steps-card,
-.cta-banner {
+.cta-banner,
+.admin-card,
+.trust-card {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -125,7 +127,9 @@ a {
 .hero h1,
 .feature-card h3,
 .step-item h3,
-.cta-banner h2 {
+.cta-banner h2,
+.admin-card h2,
+.trust-card h3 {
   font-family: "Sora", sans-serif;
 }
 
@@ -215,7 +219,9 @@ a {
 .cta-banner p,
 .footer p,
 .mini-panel p,
-.strip-item span {
+.strip-item span,
+.admin-card p,
+.trust-card p {
   color: var(--text-soft);
   line-height: 1.75;
 }
@@ -382,6 +388,34 @@ a {
   margin: 10px 0 0;
 }
 
+.check-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  gap: 12px;
+}
+
+.check-list li {
+  position: relative;
+  padding-left: 28px;
+  color: var(--text);
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.check-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.42rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--brand-bright) 0%, var(--brand) 100%);
+  box-shadow: 0 0 0 5px rgba(25, 164, 90, 0.12);
+}
+
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -521,6 +555,79 @@ a {
   color: rgba(236, 248, 236, 0.82);
 }
 
+.admin-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.admin-card,
+.trust-card {
+  padding: 30px;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(13, 107, 59, 0.12);
+  box-shadow: 0 16px 36px rgba(20, 63, 38, 0.08);
+}
+
+.admin-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86) 0%, rgba(246, 252, 242, 0.8) 100%);
+}
+
+.admin-card h2 {
+  margin: 18px 0 12px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.admin-card p,
+.trust-card p {
+  margin: 0;
+}
+
+.admin-list {
+  margin-top: 20px;
+}
+
+.compact-actions {
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+
+.trust-card {
+  background:
+    linear-gradient(180deg, rgba(14, 69, 39, 0.94) 0%, rgba(9, 52, 29, 0.96) 100%);
+  color: #f4fce7;
+  border-color: rgba(223, 242, 226, 0.12);
+}
+
+.trust-card h3 {
+  margin: 18px 0 12px;
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.trust-card p {
+  color: rgba(236, 248, 236, 0.82);
+}
+
+.trust-card .section-kicker {
+  background: rgba(255, 255, 255, 0.1);
+  color: #eff9e8;
+}
+
+.trust-card .check-list li {
+  color: #eff9e8;
+}
+
+.trust-card .check-list li::before {
+  background: linear-gradient(180deg, #d4ff91 0%, #6ed970 100%);
+  box-shadow: 0 0 0 5px rgba(212, 255, 145, 0.12);
+}
+
 .cta-banner {
   display: flex;
   align-items: center;
@@ -570,6 +677,12 @@ a {
   max-width: 56ch;
 }
 
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 @keyframes floatBlob {
   0%, 100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -583,7 +696,8 @@ a {
   .hero,
   .two-column,
   .card-grid,
-  .strip {
+  .strip,
+  .admin-section {
     grid-template-columns: 1fr;
   }
 
@@ -644,14 +758,21 @@ a {
   .signal-card,
   .steps-card,
   .feature-card,
-  .footer {
+  .footer,
+  .admin-card,
+  .trust-card {
     padding: 22px;
   }
 
   .hero-actions,
   .button,
-  .button-large {
+  .button-large,
+  .footer-actions {
     width: 100%;
+  }
+
+  .footer-actions {
+    display: grid;
   }
 
   .button {
