@@ -13,8 +13,9 @@ const ANALYTICS_CONFIG = {
   // Fill these with your Supabase Project settings:
   // Project URL: https://<project-ref>.supabase.co
   // Anon public key: eyJ...
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  supabaseUrl: "https://qpzwinntrphqaabatoaf.supabase.co",
+  supabaseAnonKey:
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwendpbm50cnBocWFhYmF0b2FmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5ODY5MTksImV4cCI6MjA5MDU2MjkxOX0.je1E_QKNABd-U18tSCcJd4JoTjVX8DZM5ejc_9IDaX0",
 
   // Optional: set true to see events in DevTools console.
   debug: false,
@@ -187,4 +188,3 @@ if (document.readyState === "loading") {
 } else {
   initAnalytics();
 }
-
