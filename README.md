@@ -72,6 +72,10 @@ create table if not exists public.events (
 
 alter table public.events enable row level security;
 
+-- Grants: sem isso o PostgREST pode negar mesmo com policy.
+grant usage on schema public to anon, authenticated;
+grant insert on table public.events to anon, authenticated;
+
 -- Simples e direto: permite INSERT por anon (bom para começar).
 -- Se quiser endurecer depois, a gente pode mover isso para uma Edge Function.
 drop policy if exists "Allow anon inserts" on public.events;
