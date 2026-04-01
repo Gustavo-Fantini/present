@@ -291,6 +291,14 @@
 
         setTimeout(function () {
           if (!body) return;
+          if (window.__FI_SCRIPT_TAG_ERROR) {
+            body.textContent = "inline: fi.js failed to load (script onerror)";
+            return;
+          }
+          if (window.__FI_SCRIPT_TAG_LOADED && !window.__FI_SCRIPT_LOADED) {
+            body.textContent = "inline: fi.js loaded but did not execute (syntax/parse error?)";
+            return;
+          }
           if (!window.__FI_SCRIPT_LOADED) {
             body.textContent = "inline: fi.js not loaded (404/block/cache)";
             return;
@@ -306,7 +314,12 @@
     })();
   </script>
 
-  <script src="script.js"></script>
-  <script src="fi.js"></script>
+  <script defer src="script.js"></script>
+  <script
+    defer
+    src="fi.js?v=20260401_1"
+    onload="window.__FI_SCRIPT_TAG_LOADED=1"
+    onerror="window.__FI_SCRIPT_TAG_ERROR=1"
+  ></script>
 </body>
 </html>
