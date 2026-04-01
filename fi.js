@@ -300,12 +300,13 @@ function instrumentHeartbeats(sendEvent) {
 
 function init() {
   if (!ANALYTICS_CONFIG.enabled) return;
+  globalThis.__FI_LOADED = true;
 
   const debugEnabled = isDebugEnabled();
   let overlay = null;
-  if (debugEnabled) {
-    overlay = createDebugOverlay();
-  }
+  // Prefer the inline debug bar (index.html) if present; fall back to overlay.
+  const inlineBody = document.getElementById("fi-debug-body");
+  if (debugEnabled && !inlineBody) overlay = createDebugOverlay();
 
   const debugState = {
     overlay,
@@ -314,7 +315,6 @@ function init() {
     lastStatus: null,
     lastError: null,
     render() {
-      if (!this.overlay) return;
       const bits = [];
       bits.push(`total=${this.counts.total}`);
       if (this.counts.page_view) bits.push(`pv=${this.counts.page_view}`);
@@ -325,7 +325,13 @@ function init() {
       const status = this.lastStatus ? `status=${this.lastStatus}` : "status=?";
       const last = this.lastEvent ? `last=${this.lastEvent}` : "last=?";
       const err = this.lastError ? `err=${this.lastError}` : "";
-      setOverlayText(this.overlay, `${bits.join(" ")} | ${status} | ${last}${err ? " | " + err : ""}`);
+      const line = `${bits.join(" ")} | ${status} | ${last}${err ? " | " + err : ""}`;
+      if (inlineBody && debugEnabled) {
+        inlineBody.textContent = line;
+        return;
+      }
+      if (!this.overlay) return;
+      setOverlayText(this.overlay, line);
     },
   };
 
@@ -346,4 +352,3 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
-
