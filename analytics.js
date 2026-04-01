@@ -24,6 +24,16 @@ const ANALYTICS_CONFIG = {
   table: "events",
 };
 
+function isDebugEnabled() {
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.get("debug") === "1") return true;
+    return localStorage.getItem("fi_debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
 function getOrCreateId(storageKey) {
   try {
     const existing = localStorage.getItem(storageKey);
@@ -76,6 +86,7 @@ function basePayload() {
     page_path: location.pathname,
     page_url: location.href,
     referrer: document.referrer || null,
+    page_view_id: globalThis.__FI_PAGE_VIEW_ID || null,
     visitor_id: getOrCreateId("fi_visitor"),
     session_id: getSessionId(),
     user_agent: navigator.userAgent || null,
@@ -113,7 +124,8 @@ function sendEvent(eventType, eventName, extra) {
 
   const row = toSupabaseRow(eventType, eventName, extra);
 
-  if (ANALYTICS_CONFIG.debug) {
+  const debug = ANALYTICS_CONFIG.debug || isDebugEnabled();
+  if (debug) {
     // eslint-disable-next-line no-console
     console.log("[analytics]", row);
   }
@@ -132,18 +144,14 @@ function sendEvent(eventType, eventName, extra) {
     Prefer: "return=minimal",
   };
 
-  // Use sendBeacon for better delivery on mobile/in-app browsers.
-  try {
-    if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: "application/json" });
-      navigator.sendBeacon(url, blob);
-      return;
+  // NOTE: We intentionally avoid navigator.sendBeacon here because Supabase REST
+  // requires auth headers (apikey/Authorization), which sendBeacon cannot set.
+  fetch(url, { method: "POST", headers, body, keepalive: true }).catch((err) => {
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.warn("[analytics] send failed", err);
     }
-  } catch {
-    // ignore and fallback to fetch
-  }
-
-  fetch(url, { method: "POST", headers, body, keepalive: true }).catch(() => {});
+  });
 }
 
 function instrumentClicks() {
@@ -177,10 +185,70 @@ function instrumentPageView() {
   sendEvent("page_view", "page_view", null);
 }
 
+function instrumentEngagement() {
+  const startTs = Date.now();
+  const startPerf = typeof performance !== "undefined" ? performance.now() : 0;
+  let visibleStartPerf = startPerf;
+  let visibleMs = 0;
+  let maxScrollPct = 0;
+
+  function computeScrollPct() {
+    const doc = document.documentElement;
+    const scrollTop = doc.scrollTop || document.body.scrollTop || 0;
+    const scrollHeight = doc.scrollHeight || 0;
+    const clientHeight = doc.clientHeight || window.innerHeight || 0;
+    const denom = Math.max(1, scrollHeight - clientHeight);
+    const pct = Math.max(0, Math.min(100, Math.round((scrollTop / denom) * 100)));
+    maxScrollPct = Math.max(maxScrollPct, pct);
+  }
+
+  function onVisibilityChange() {
+    const now = typeof performance !== "undefined" ? performance.now() : 0;
+    if (document.visibilityState === "hidden") {
+      visibleMs += Math.max(0, now - visibleStartPerf);
+    } else {
+      visibleStartPerf = now;
+    }
+  }
+
+  window.addEventListener("scroll", computeScrollPct, { passive: true });
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  computeScrollPct();
+
+  function flush(reason) {
+    try {
+      const nowPerf = typeof performance !== "undefined" ? performance.now() : 0;
+      if (document.visibilityState !== "hidden") {
+        visibleMs += Math.max(0, nowPerf - visibleStartPerf);
+        visibleStartPerf = nowPerf;
+      }
+
+      computeScrollPct();
+
+      const durationMs = Date.now() - startTs;
+      sendEvent("engagement", reason, {
+        duration_ms: durationMs,
+        visible_ms: Math.round(visibleMs),
+        max_scroll_pct: maxScrollPct,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // pagehide is the most reliable on mobile Safari / in-app browsers.
+  window.addEventListener("pagehide", () => flush("pagehide"));
+  window.addEventListener("beforeunload", () => flush("beforeunload"));
+}
+
 function initAnalytics() {
   if (!ANALYTICS_CONFIG.enabled) return;
+  globalThis.__FI_PAGE_VIEW_ID =
+    (globalThis.crypto && crypto.randomUUID && crypto.randomUUID()) ||
+    `pv_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
   instrumentPageView();
   instrumentClicks();
+  instrumentEngagement();
 }
 
 if (document.readyState === "loading") {
