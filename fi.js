@@ -21,6 +21,9 @@ const ANALYTICS_CONFIG = {
   table: "events",
 };
 
+// Marks that the JS file itself was loaded/executed.
+globalThis.__FI_SCRIPT_LOADED = true;
+
 function isDebugEnabled() {
   try {
     const url = new URL(location.href);
@@ -347,8 +350,17 @@ function init() {
   instrumentHeartbeats(sendEvent);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init, { once: true });
-} else {
+let __fi_inited = false;
+function safeInit() {
+  if (__fi_inited) return;
+  __fi_inited = true;
   init();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", safeInit, { once: true });
+  // Fallback in case DOMContentLoaded never fires (some in-app browsers are weird).
+  setTimeout(safeInit, 2000);
+} else {
+  safeInit();
 }

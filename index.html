@@ -291,7 +291,14 @@
 
         setTimeout(function () {
           if (!body) return;
-          if (!window.__FI_LOADED) body.textContent = "inline: fi.js not loaded (404/block/cache)";
+          if (!window.__FI_SCRIPT_LOADED) {
+            body.textContent = "inline: fi.js not loaded (404/block/cache)";
+            return;
+          }
+          if (!window.__FI_LOADED) {
+            body.textContent = "inline: fi.js loaded, waiting init...";
+            return;
+          }
         }, 2000);
       } catch (e) {
         // ignore
