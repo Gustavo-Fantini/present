@@ -186,6 +186,20 @@
     }
   }
 
+  function parseMissingColumnError(text) {
+    try {
+      var obj = JSON.parse(text);
+      if (!obj || obj.code !== "PGRST204") return null;
+      // Example: "Could not find the 'page_view_id' column of 'events' in the schema cache"
+      var msg = String(obj.message || "");
+      var m = /Could not find the '([^']+)' column/i.exec(msg);
+      if (!m) return null;
+      return m[1];
+    } catch (e) {
+      return null;
+    }
+  }
+
   function sendEvent(type, name, extra) {
     if (!canSend()) return;
     var row = base();
@@ -207,10 +221,38 @@
     var url =
       CONFIG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/" + encodeURIComponent(CONFIG.table);
     var body = JSON.stringify(row);
-    postJson(url, body, function (status, text) {
+
+    function handleResponse(status, text, didRetry) {
       state.status = "http_" + String(status);
-      if (status < 200 || status >= 300) state.err = (text || "").slice(0, 160);
+      if (status < 200 || status >= 300) state.err = (text || "").slice(0, 220);
       renderDebug();
+
+      if (didRetry) return;
+
+      // If schema is missing a column, retry once by moving it into extra and deleting the top-level field.
+      if (status === 400 && text) {
+        var missing = parseMissingColumnError(text);
+        if (missing && row.hasOwnProperty(missing)) {
+          state.status = "retry_missing_col_" + missing;
+          renderDebug();
+          if (!row.extra || typeof row.extra !== "object") row.extra = {};
+          if (!row.extra._missing_cols || typeof row.extra._missing_cols !== "object") row.extra._missing_cols = {};
+          row.extra._missing_cols[missing] = row[missing];
+          try {
+            delete row[missing];
+          } catch (e) {
+            row[missing] = null;
+          }
+          var body2 = JSON.stringify(row);
+          postJson(url, body2, function (status2, text2) {
+            handleResponse(status2, text2, true);
+          });
+        }
+      }
+    }
+
+    postJson(url, body, function (status, text) {
+      handleResponse(status, text, false);
     });
   }
 
@@ -362,4 +404,3 @@
     safeInit();
   }
 })();
-

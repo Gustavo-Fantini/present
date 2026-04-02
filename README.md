@@ -45,6 +45,9 @@ create table if not exists public.events (
   event_type text not null,
   event_name text,
 
+  -- correlates events per page load ("acesso")
+  page_view_id text,
+
   page_path text,
   page_url text,
   referrer text,
