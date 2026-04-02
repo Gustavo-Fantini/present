@@ -151,6 +151,9 @@
   var flushedOnce = false;
   var lastStatus = "";
   var lastErr = "";
+  var flushTimer = null;
+  var flushPendingReason = null;
+  var lastFlushAt = 0;
 
   function computeScrollPct() {
     try {
@@ -269,6 +272,25 @@
     });
   }
 
+  function scheduleFlush(reason, delayMs) {
+    if (!canSend()) return;
+    flushPendingReason = reason || flushPendingReason || "scheduled";
+    if (flushTimer) return;
+
+    flushTimer = setTimeout(function () {
+      flushTimer = null;
+      var now = Date.now();
+      // Avoid hammering the DB with too many updates.
+      if (now - lastFlushAt < 1500) {
+        scheduleFlush(flushPendingReason, 1500 - (now - lastFlushAt));
+        return;
+      }
+      lastFlushAt = Date.now();
+      flush(flushPendingReason);
+      flushPendingReason = null;
+    }, typeof delayMs === "number" ? delayMs : 0);
+  }
+
   function closestWithAttr(el, attr) {
     var cur = el;
     while (cur && cur !== document.documentElement) {
@@ -323,6 +345,9 @@
         } catch (e) {}
 
         renderDebug();
+
+        // Persist quickly after interaction, still within the same row (upsert).
+        scheduleFlush("interaction", 800);
       },
       true
     );
@@ -331,7 +356,13 @@
   function init() {
     if (!CONFIG.enabled) return;
     window.addEventListener("scroll", computeScrollPct, { passive: true });
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("visibilitychange", function () {
+      onVisibilityChange();
+      // When the page goes to background (common in in-app browsers), persist what we have.
+      try {
+        if (document.visibilityState === "hidden") scheduleFlush("hidden", 0);
+      } catch (e) {}
+    });
     computeScrollPct();
     instrumentClicks();
 
