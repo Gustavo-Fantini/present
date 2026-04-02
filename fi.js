@@ -1,5 +1,4 @@
-/* Free Island tracking (ES5 + XHR). */
-
+/* Free Island session tracking: 1 row per access (page_view_id), ES5 + XHR. */
 (function () {
   try {
     window.__FI_SCRIPT_LOADED = true;
@@ -10,14 +9,9 @@
     supabaseUrl: "https://qpzwinntrphqaabatoaf.supabase.co",
     supabaseAnonKey:
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwendpbm50cnBocWFhYmF0b2FmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5ODY5MTksImV4cCI6MjA5MDU2MjkxOX0.je1E_QKNABd-U18tSCcJd4JoTjVX8DZM5ejc_9IDaX0",
-    table: "events",
+    table: "page_sessions",
+    flushAfterMs: 60000,
   };
-
-  function safeText(el, text) {
-    try {
-      if (el) el.textContent = text;
-    } catch (e) {}
-  }
 
   function isDebug() {
     try {
@@ -35,40 +29,10 @@
     debugBody = document.getElementById("fi-debug-body");
   } catch (e) {}
 
-  var state = {
-    total: 0,
-    pv: 0,
-    click: 0,
-    wa: 0,
-    eng: 0,
-    hb: 0,
-    last: "",
-    status: "",
-    err: "",
-  };
-
-  function renderDebug() {
-    if (!debugEnabled || !debugBody) return;
-    var bits = [];
-    bits.push("total=" + state.total);
-    bits.push("pv=" + state.pv);
-    bits.push("click=" + state.click);
-    bits.push("wa=" + state.wa);
-    bits.push("eng=" + state.eng);
-    bits.push("hb=" + state.hb);
-    var line = bits.join(" ") + " | status=" + (state.status || "?") + " | last=" + (state.last || "?");
-    if (state.err) line += " | err=" + state.err;
-    safeText(debugBody, line);
-  }
-
-  function canSend() {
-    return (
-      CONFIG.enabled &&
-      typeof CONFIG.supabaseUrl === "string" &&
-      CONFIG.supabaseUrl.indexOf("https://") === 0 &&
-      typeof CONFIG.supabaseAnonKey === "string" &&
-      CONFIG.supabaseAnonKey.length > 30
-    );
+  function safeText(el, text) {
+    try {
+      if (el) el.textContent = text;
+    } catch (e) {}
   }
 
   function randId(prefix) {
@@ -131,16 +95,93 @@
     return out;
   }
 
-  function base() {
-    var utm = getUtm();
-    var payload = {
-      created_at: new Date().toISOString(),
+  function canSend() {
+    return (
+      CONFIG.enabled &&
+      typeof CONFIG.supabaseUrl === "string" &&
+      CONFIG.supabaseUrl.indexOf("https://") === 0 &&
+      typeof CONFIG.supabaseAnonKey === "string" &&
+      CONFIG.supabaseAnonKey.length > 30
+    );
+  }
+
+  function postUpsert(row, cb) {
+    try {
+      var url =
+        CONFIG.supabaseUrl.replace(/\/$/, "") +
+        "/rest/v1/" +
+        encodeURIComponent(CONFIG.table) +
+        "?on_conflict=page_view_id";
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("apikey", CONFIG.supabaseAnonKey);
+      xhr.setRequestHeader("Authorization", "Bearer " + CONFIG.supabaseAnonKey);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Prefer", "resolution=merge-duplicates,return=minimal");
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        cb(xhr.status, xhr.responseText || "");
+      };
+      xhr.send(JSON.stringify(row));
+    } catch (e) {
+      cb(0, String(e && e.message ? e.message : e));
+    }
+  }
+
+  // Aggregated session state (1 row per access)
+  var pageViewId = randId("pv");
+  try {
+    window.__FI_PAGE_VIEW_ID = pageViewId;
+    window.__FI_LOADED = true;
+  } catch (e) {}
+
+  var utm = getUtm();
+  var startTs = Date.now();
+  var visibleStart = Date.now();
+  var visibleMs = 0;
+  var maxScrollPct = 0;
+  var clickCounts = {}; // trackName -> count
+  var clickAny = false;
+  var whatsappClicks = 0;
+  var instagramClicks = 0;
+  var externalRedirects = 0; // counts clicks that likely navigate away
+  var redirectedToWhatsapp = false;
+  var redirectedToInstagram = false;
+  var flushedOnce = false;
+  var lastStatus = "";
+  var lastErr = "";
+
+  function computeScrollPct() {
+    try {
+      var doc = document.documentElement;
+      var scrollTop = doc.scrollTop || document.body.scrollTop || 0;
+      var scrollHeight = doc.scrollHeight || 0;
+      var clientHeight = doc.clientHeight || window.innerHeight || 0;
+      var denom = Math.max(1, scrollHeight - clientHeight);
+      var pct = Math.max(0, Math.min(100, Math.round((scrollTop / denom) * 100)));
+      if (pct > maxScrollPct) maxScrollPct = pct;
+    } catch (e) {}
+  }
+
+  function onVisibilityChange() {
+    var now = Date.now();
+    if (document.visibilityState === "hidden") {
+      visibleMs += Math.max(0, now - visibleStart);
+    } else {
+      visibleStart = now;
+    }
+  }
+
+  function baseRow() {
+    var row = {
+      // Do NOT send created_at from client. Let Supabase default now() be the source of truth.
+      page_view_id: pageViewId,
+      visitor_id: getOrCreate("fi_visitor"),
+      session_id: getSessionId(),
       page_path: String(location.pathname || ""),
       page_url: String(location.href || ""),
       referrer: (document && document.referrer) ? String(document.referrer) : null,
-      page_view_id: window.__FI_PAGE_VIEW_ID || null,
-      visitor_id: getOrCreate("fi_visitor"),
-      session_id: getSessionId(),
       user_agent: (navigator && navigator.userAgent) ? String(navigator.userAgent) : null,
       language: (navigator && navigator.language) ? String(navigator.language) : null,
       timezone: null,
@@ -155,104 +196,76 @@
       utm_term: utm.utm_term,
     };
     try {
-      payload.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+      row.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
     } catch (e) {}
     try {
-      payload.screen_w = (screen && screen.width) ? Number(screen.width) : null;
-      payload.screen_h = (screen && screen.height) ? Number(screen.height) : null;
+      row.screen_w = (screen && screen.width) ? Number(screen.width) : null;
+      row.screen_h = (screen && screen.height) ? Number(screen.height) : null;
     } catch (e) {}
     try {
-      payload.viewport_w = Number(window.innerWidth || 0) || null;
-      payload.viewport_h = Number(window.innerHeight || 0) || null;
+      row.viewport_w = Number(window.innerWidth || 0) || null;
+      row.viewport_h = Number(window.innerHeight || 0) || null;
     } catch (e) {}
-    return payload;
+    return row;
   }
 
-  function postJson(url, body, cb) {
-    try {
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", url, true);
-      xhr.setRequestHeader("apikey", CONFIG.supabaseAnonKey);
-      xhr.setRequestHeader("Authorization", "Bearer " + CONFIG.supabaseAnonKey);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.setRequestHeader("Prefer", "return=minimal");
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState !== 4) return;
-        cb(xhr.status, xhr.responseText || "");
-      };
-      xhr.send(body);
-    } catch (e) {
-      cb(0, String(e && e.message ? e.message : e));
+  function buildRow(reason) {
+    var now = Date.now();
+    var dur = now - startTs;
+    if (document.visibilityState !== "hidden") {
+      visibleMs += Math.max(0, now - visibleStart);
+      visibleStart = now;
     }
+    computeScrollPct();
+
+    var row = baseRow();
+    row.flush_reason = reason || null;
+    row.duration_ms = dur;
+    row.visible_ms = visibleMs;
+    row.max_scroll_pct = maxScrollPct;
+    row.click_any = !!clickAny;
+    row.click_counts = clickCounts;
+    row.whatsapp_clicks = whatsappClicks;
+    row.instagram_clicks = instagramClicks;
+    row.external_redirects = externalRedirects;
+    row.redirected_to_whatsapp = !!redirectedToWhatsapp;
+    row.redirected_to_instagram = !!redirectedToInstagram;
+    row.closed = reason === "pagehide" || reason === "beforeunload";
+    return row;
   }
 
-  function parseMissingColumnError(text) {
-    try {
-      var obj = JSON.parse(text);
-      if (!obj || obj.code !== "PGRST204") return null;
-      // Example: "Could not find the 'page_view_id' column of 'events' in the schema cache"
-      var msg = String(obj.message || "");
-      var m = /Could not find the '([^']+)' column/i.exec(msg);
-      if (!m) return null;
-      return m[1];
-    } catch (e) {
-      return null;
-    }
+  function renderDebug() {
+    if (!debugEnabled || !debugBody) return;
+    var line =
+      "pv=" +
+      pageViewId +
+      " | status=" +
+      (lastStatus || "?") +
+      " | dur_ms=" +
+      String(Date.now() - startTs) +
+      " | clicks=" +
+      String(clickAny ? 1 : 0) +
+      " wa=" +
+      String(whatsappClicks) +
+      " ig=" +
+      String(instagramClicks) +
+      " redir=" +
+      String(externalRedirects) +
+      (lastErr ? " | err=" + lastErr : "");
+    safeText(debugBody, line);
   }
 
-  function sendEvent(type, name, extra) {
+  function flush(reason) {
     if (!canSend()) return;
-    var row = base();
-    row.event_type = type;
-    row.event_name = name || null;
-    row.extra = extra || null;
-
-    state.total += 1;
-    state.last = type + ":" + (name || "");
-    state.err = "";
-    state.status = "sending";
-    if (type === "page_view") state.pv += 1;
-    else if (type === "click") state.click += 1;
-    else if (type === "whatsapp_click") state.wa += 1;
-    else if (type === "engagement") state.eng += 1;
-    else if (type === "heartbeat") state.hb += 1;
+    var row = buildRow(reason);
+    flushedOnce = true;
+    lastStatus = "sending";
+    lastErr = "";
     renderDebug();
-
-    var url =
-      CONFIG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/" + encodeURIComponent(CONFIG.table);
-    var body = JSON.stringify(row);
-
-    function handleResponse(status, text, didRetry) {
-      state.status = "http_" + String(status);
-      if (status < 200 || status >= 300) state.err = (text || "").slice(0, 220);
+    postUpsert(row, function (status, text) {
+      lastStatus = "http_" + String(status);
+      if (status < 200 || status >= 300) lastErr = (text || "").slice(0, 220);
       renderDebug();
-
-      if (didRetry) return;
-
-      // If schema is missing a column, retry once by moving it into extra and deleting the top-level field.
-      if (status === 400 && text) {
-        var missing = parseMissingColumnError(text);
-        if (missing && row.hasOwnProperty(missing)) {
-          state.status = "retry_missing_col_" + missing;
-          renderDebug();
-          if (!row.extra || typeof row.extra !== "object") row.extra = {};
-          if (!row.extra._missing_cols || typeof row.extra._missing_cols !== "object") row.extra._missing_cols = {};
-          row.extra._missing_cols[missing] = row[missing];
-          try {
-            delete row[missing];
-          } catch (e) {
-            row[missing] = null;
-          }
-          var body2 = JSON.stringify(row);
-          postJson(url, body2, function (status2, text2) {
-            handleResponse(status2, text2, true);
-          });
-        }
-      }
-    }
-
-    postJson(url, body, function (status, text) {
-      handleResponse(status, text, false);
     });
   }
 
@@ -273,81 +286,62 @@
       function (evt) {
         var t = evt && evt.target ? evt.target : null;
         if (!t) return;
+
         var node = closestWithAttr(t, "data-track");
         if (!node) return;
+
         var track = null;
         try {
           track = node.getAttribute("data-track");
         } catch (e) {}
         if (!track) return;
 
+        clickAny = true;
+        clickCounts[track] = (clickCounts[track] || 0) + 1;
+
         var href = null;
         try {
           if (node.tagName === "A" && node.href) href = String(node.href);
         } catch (e) {}
 
-        var text = null;
+        // Basic redirect inference: external navigation or WhatsApp/Instagram targets.
         try {
-          text = String(node.textContent || "").trim().slice(0, 80) || null;
-        } catch (e) {}
-
-        sendEvent("click", track, { href: href, text: text });
-        try {
-          if (node.getAttribute("data-whatsapp-link") != null) {
-            sendEvent("whatsapp_click", track, { href: href });
+          var isWhatsapp = node.getAttribute("data-whatsapp-link") != null;
+          if (isWhatsapp) {
+            whatsappClicks += 1;
+            redirectedToWhatsapp = true;
+            externalRedirects += 1;
           }
         } catch (e) {}
+
+        try {
+          if (href && href.indexOf("instagram.com/") !== -1) {
+            instagramClicks += 1;
+            redirectedToInstagram = true;
+            externalRedirects += 1;
+          }
+        } catch (e) {}
+
+        renderDebug();
       },
       true
     );
   }
 
-  function instrumentEngagement() {
-    var startTs = Date.now();
-    var visibleStart = Date.now();
-    var visibleMs = 0;
-    var maxScrollPct = 0;
+  function init() {
+    if (!CONFIG.enabled) return;
+    window.addEventListener("scroll", computeScrollPct, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    computeScrollPct();
+    instrumentClicks();
 
-    function scrollPct() {
-      try {
-        var doc = document.documentElement;
-        var scrollTop = doc.scrollTop || document.body.scrollTop || 0;
-        var scrollHeight = doc.scrollHeight || 0;
-        var clientHeight = doc.clientHeight || window.innerHeight || 0;
-        var denom = Math.max(1, scrollHeight - clientHeight);
-        var pct = Math.max(0, Math.min(100, Math.round((scrollTop / denom) * 100)));
-        if (pct > maxScrollPct) maxScrollPct = pct;
-      } catch (e) {}
-    }
+    // Initial upsert so you always get at least 1 row per access.
+    flush("page_view");
 
-    function onVis() {
-      var now = Date.now();
-      if (document.visibilityState === "hidden") {
-        visibleMs += Math.max(0, now - visibleStart);
-      } else {
-        visibleStart = now;
-      }
-    }
-
-    window.addEventListener("scroll", scrollPct, { passive: true });
-    document.addEventListener("visibilitychange", onVis);
-    scrollPct();
-
-    function flush(reason) {
-      try {
-        var now = Date.now();
-        if (document.visibilityState !== "hidden") {
-          visibleMs += Math.max(0, now - visibleStart);
-          visibleStart = now;
-        }
-        scrollPct();
-        sendEvent("engagement", reason, {
-          duration_ms: now - startTs,
-          visible_ms: visibleMs,
-          max_scroll_pct: maxScrollPct,
-        });
-      } catch (e) {}
-    }
+    // Flush at 60s even if user doesn't leave.
+    setTimeout(function () {
+      flush("t_60s");
+    }, CONFIG.flushAfterMs);
 
     window.addEventListener("pagehide", function () {
       flush("pagehide");
@@ -355,41 +349,13 @@
     window.addEventListener("beforeunload", function () {
       flush("beforeunload");
     });
+
+    // In case the user closes super fast, flush once soon.
+    setTimeout(function () {
+      if (!flushedOnce) flush("t_2s");
+    }, 2000);
   }
 
-  function instrumentHeartbeats() {
-    var schedule = [15000, 30000, 60000];
-    var start = Date.now();
-    var idx = 0;
-
-    function tick() {
-      if (idx >= schedule.length) return;
-      var now = Date.now();
-      var elapsed = now - start;
-      if (elapsed >= schedule[idx]) {
-        var seconds = Math.round(schedule[idx] / 1000);
-        sendEvent("heartbeat", "t_" + seconds + "s", { elapsed_ms: elapsed });
-        idx += 1;
-      }
-      if (idx < schedule.length) setTimeout(tick, 750);
-    }
-
-    setTimeout(tick, 750);
-  }
-
-  function init() {
-    if (!CONFIG.enabled) return;
-    try {
-      window.__FI_LOADED = true;
-      window.__FI_PAGE_VIEW_ID = randId("pv");
-    } catch (e) {}
-    sendEvent("page_view", "page_view", null);
-    instrumentClicks();
-    instrumentEngagement();
-    instrumentHeartbeats();
-  }
-
-  // Init with fallback for weird webviews.
   var inited = false;
   function safeInit() {
     if (inited) return;

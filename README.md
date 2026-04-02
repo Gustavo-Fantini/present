@@ -28,25 +28,27 @@ Sempre que um grupo encher, troque apenas esse link e publique novamente.
 5. Use `.` como Publish Directory.
 6. Publique.
 
-## Métricas (Supabase)
+## Métricas (Supabase) - 1 Linha Por Acesso
 
-Se você quer métricas próprias (page_view e clique em cada botão), a página já vem com `analytics.js`.
-Ele envia eventos para uma tabela no Supabase via REST usando **apenas a anon key** (public).
+Se você quer métricas próprias por acesso (1 linha por page load), a página já vem com `fi.js`.
+Ele faz **upsert** no Supabase usando **apenas a anon key** (public) e grava:
+- 1 linha por acesso (`page_view_id`)
+- tempo na tela (duration/visible)
+- scroll máximo
+- cliques agregados por botão (`click_counts`) + flags/contagens de WhatsApp/Instagram
 
 ### 1) Crie a tabela e policy no Supabase
 
 No Supabase SQL Editor, rode:
 
 ```sql
-create table if not exists public.events (
-  id bigint generated always as identity primary key,
+create table if not exists public.page_sessions (
+  page_view_id text primary key,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
 
-  event_type text not null,
-  event_name text,
-
-  -- correlates events per page load ("acesso")
-  page_view_id text,
+  visitor_id text,
+  session_id text,
 
   page_path text,
   page_url text,
@@ -58,9 +60,6 @@ create table if not exists public.events (
   utm_content text,
   utm_term text,
 
-  visitor_id text,
-  session_id text,
-
   user_agent text,
   language text,
   timezone text,
@@ -70,41 +69,63 @@ create table if not exists public.events (
   viewport_w int,
   viewport_h int,
 
-  extra jsonb
+  duration_ms int,
+  visible_ms int,
+  max_scroll_pct int,
+
+  click_any boolean,
+  click_counts jsonb,
+
+  whatsapp_clicks int,
+  instagram_clicks int,
+  external_redirects int,
+  redirected_to_whatsapp boolean,
+  redirected_to_instagram boolean,
+
+  flush_reason text,
+  closed boolean
 );
 
-alter table public.events enable row level security;
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end $$;
 
--- Grants: sem isso o PostgREST pode negar mesmo com policy.
+drop trigger if exists trg_page_sessions_updated_at on public.page_sessions;
+create trigger trg_page_sessions_updated_at
+before update on public.page_sessions
+for each row execute function public.set_updated_at();
+
+alter table public.page_sessions enable row level security;
+
 grant usage on schema public to anon, authenticated;
-grant insert on table public.events to anon, authenticated;
+grant insert, update on table public.page_sessions to anon, authenticated;
 
 -- Simples e direto: permite INSERT por anon (bom para começar).
--- Se quiser endurecer depois, a gente pode mover isso para uma Edge Function.
-drop policy if exists "Allow anon inserts" on public.events;
-create policy "Allow anon inserts"
-on public.events
-for insert
+-- Como fazemos UPSERT, precisa liberar INSERT e UPDATE.
+drop policy if exists "allow_anon_upsert_page_sessions" on public.page_sessions;
+create policy "allow_anon_upsert_page_sessions"
+on public.page_sessions
+as permissive
+for all
 to anon
+using (true)
 with check (true);
 ```
 
 ### 2) Configure o `analytics.js`
 
-Abra `analytics.js` e preencha:
-
-```js
-supabaseUrl: "https://SEU-PROJETO.supabase.co",
-supabaseAnonKey: "SUA-ANON-KEY",
-```
+Nada a configurar: `fi.js` já está apontando para seu Supabase e usa a anon key.
 
 Depois disso, publique (Render vai redeploy).
 
 ### Eventos que você vai ver
 
-- `page_view` (carregou a página)
-- `click` para cada CTA (ex.: `cta_hero_enter`, `cta_mobile_enter`)
-- `whatsapp_click` quando o clique é em um botão do WhatsApp
+- 1 linha por acesso em `public.page_sessions`
+- `click_counts` é um JSON com a contagem por `data-track`
+- `flush_reason` indica quando salvou: `page_view`, `t_60s`, `pagehide`, etc
 
 ## Estrategia de conversao usada
 
