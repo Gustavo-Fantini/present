@@ -369,6 +369,15 @@
     // Initial upsert so you always get at least 1 row per access.
     flush("page_view");
 
+    // Early checkpoints: helps separate "instant bounce" from "stayed at least a few seconds",
+    // even when the user doesn't click anything.
+    setTimeout(function () {
+      flush("t_3s");
+    }, 3000);
+    setTimeout(function () {
+      flush("t_10s");
+    }, 10000);
+
     // Flush at 60s even if user doesn't leave.
     setTimeout(function () {
       flush("t_60s");
@@ -381,9 +390,9 @@
       flush("beforeunload");
     });
 
-    // In case the user closes super fast, flush once soon.
+    // In case the user closes super fast, persist once more shortly after load.
     setTimeout(function () {
-      if (!flushedOnce) flush("t_2s");
+      flush("t_2s");
     }, 2000);
   }
 
