@@ -300,14 +300,6 @@ a {
   font-size: 1rem;
 }
 
-.tap-hint {
-  margin: 14px 0 0;
-  text-align: center;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  color: rgba(248, 251, 255, 0.92);
-}
-
 .micro-link {
   display: inline-flex;
   align-items: center;
@@ -357,9 +349,6 @@ a {
   background: linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
   color: #fff;
   box-shadow: 0 18px 34px rgba(19, 145, 68, 0.34);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  animation: pulseCta 2.2s ease-in-out infinite;
 }
 
 .button-instagram {
@@ -513,18 +502,6 @@ a {
   display: block;
   margin-top: 14px;
   font-size: 0.82rem;
-}
-
-@keyframes pulseCta {
-  0%,
-  100% {
-    transform: translateY(0);
-    box-shadow: 0 18px 34px rgba(19, 145, 68, 0.34);
-  }
-  50% {
-    transform: translateY(-1px);
-    box-shadow: 0 22px 40px rgba(19, 145, 68, 0.44);
-  }
 }
 
 .mobile-cta {
