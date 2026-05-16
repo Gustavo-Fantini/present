@@ -325,6 +325,34 @@ a {
   margin-top: 22px;
 }
 
+.button-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.button-new {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff3b3b 0%, #c5001a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 26px rgba(160, 0, 24, 0.35);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
 .button {
   width: 100%;
   min-height: 66px;
@@ -332,12 +360,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   border-radius: 24px;
   border: 2px solid rgba(255, 255, 255, 0.1);
   font-size: 1.08rem;
   font-weight: 900;
   text-align: center;
   transition: transform 0.2s ease, filter 0.2s ease;
+  position: relative;
 }
 
 .button:hover {
@@ -355,6 +385,13 @@ a {
   background: linear-gradient(180deg, var(--blue) 0%, var(--blue-deep) 100%);
   color: #fff;
   box-shadow: 0 18px 34px rgba(42, 116, 255, 0.28);
+}
+
+.button-telegram {
+  background: linear-gradient(180deg, #41c9ff 0%, #2a74ff 100%);
+  color: #fff;
+  box-shadow: 0 18px 34px rgba(42, 116, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .hero-pills {

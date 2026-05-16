@@ -344,6 +344,12 @@
           }
         } catch (e) {}
 
+        try {
+          if (href && (href.indexOf("t.me/") !== -1 || href.indexOf("telegram.me/") !== -1)) {
+            externalRedirects += 1;
+          }
+        } catch (e) {}
+
         renderDebug();
 
         // Persist quickly after interaction, still within the same row (upsert).
