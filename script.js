@@ -185,7 +185,7 @@ yearTargets.forEach((target) => {
 
 if (WHATSAPP_GROUP_URL === placeholderUrl) {
   links.forEach((link) => {
-    link.addEventListener("click", (event) => {
+    link.addEventListener("click", function (event) {
       event.preventDefault();
       window.alert("Atualize o link do grupo em script.js antes de publicar a pagina.");
     });
