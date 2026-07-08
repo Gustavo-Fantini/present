@@ -17,16 +17,54 @@
   <link rel="stylesheet" href="styles.css">
   <!-- Meta Pixel Code -->
   <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1479287410507022');
-    fbq('track', 'PageView');
+    (function () {
+      var pixelId = "1479287410507022";
+      var debug = false;
+
+      try {
+        debug = new URLSearchParams(window.location.search).get("debugMeta") === "true";
+      } catch (e) {}
+
+      function metaDebug(message, data) {
+        if (!debug || !window.console) return;
+        if (typeof data === "undefined") {
+          console.log("[Free Island Meta]", message);
+        } else {
+          console.log("[Free Island Meta]", message, data);
+        }
+      }
+
+      window.__FI_META_PIXEL_ID = pixelId;
+      window.__FI_META_DEBUG = debug;
+      window.__FI_META_INIT_SENT = false;
+      window.__FI_META_PAGEVIEW_SENT = false;
+      window.__FI_META_LIBRARY_LOADED = false;
+      window.__FI_META_LIBRARY_ERROR = false;
+
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;
+      t.onload=function(){f.__FI_META_LIBRARY_LOADED=true;metaDebug("Pixel carregado");};
+      t.onerror=function(){f.__FI_META_LIBRARY_ERROR=true;metaDebug("Meta Pixel nao carregado");};
+      s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+
+      if (typeof fbq === "function") {
+        fbq("init", pixelId);
+        window.__FI_META_INIT_SENT = true;
+        metaDebug("fbq encontrado");
+
+        fbq("track", "PageView");
+        window.__FI_META_PAGEVIEW_SENT = true;
+        metaDebug("PageView enviado");
+      } else {
+        metaDebug("Meta Pixel nao carregado");
+      }
+    })();
   </script>
   <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1479287410507022&ev=PageView&noscript=1"
@@ -192,7 +230,7 @@
   </script>
 
   <script defer src="script.js"></script>
-  <script defer src="meta-events.js?v=20260708_1"></script>
+  <script defer src="meta-events.js?v=20260708_2"></script>
   <script
     defer
     src="fi.js?v=20260401_1"

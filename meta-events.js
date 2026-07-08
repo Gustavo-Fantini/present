@@ -1,4 +1,5 @@
 (function () {
+  var META_PIXEL_ID = window.__FI_META_PIXEL_ID || "1479287410507022";
   var LANDING_PAGE = "landing";
   var CLICK_COOLDOWN_MS = 1200;
   var REDIRECT_DELAY_MS = 150;
@@ -7,17 +8,115 @@
   var scroll90Sent = false;
   var viewContentSent = false;
 
+  function isDebugMeta() {
+    try {
+      return new URLSearchParams(window.location.search).get("debugMeta") === "true";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function metaDebug(message, data) {
+    if (!isDebugMeta() || !window.console) return;
+
+    if (typeof data === "undefined") {
+      console.log("[Free Island Meta]", message);
+    } else {
+      console.log("[Free Island Meta]", message, data);
+    }
+  }
+
   function hasFbq() {
     return typeof window.fbq === "function";
   }
 
-  function trackEvent(method, eventName, params) {
-    if (!hasFbq()) return false;
+  function injectMetaLibrary() {
+    if (document.querySelector('script[src*="connect.facebook.net/en_US/fbevents.js"]')) {
+      return;
+    }
+
+    var script = document.createElement("script");
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    script.onload = function () {
+      window.__FI_META_LIBRARY_LOADED = true;
+      metaDebug("Pixel carregado");
+    };
+    script.onerror = function () {
+      window.__FI_META_LIBRARY_ERROR = true;
+      metaDebug("Meta Pixel nao carregado");
+    };
+
+    var firstScript = document.getElementsByTagName("script")[0];
+    if (firstScript && firstScript.parentNode) {
+      firstScript.parentNode.insertBefore(script, firstScript);
+    } else if (document.head) {
+      document.head.appendChild(script);
+    }
+  }
+
+  function bootstrapMetaPixel() {
+    if (!hasFbq()) {
+      window.fbq = function () {
+        window.fbq.callMethod
+          ? window.fbq.callMethod.apply(window.fbq, arguments)
+          : window.fbq.queue.push(arguments);
+      };
+
+      if (!window._fbq) window._fbq = window.fbq;
+      window.fbq.push = window.fbq;
+      window.fbq.loaded = true;
+      window.fbq.version = "2.0";
+      window.fbq.queue = [];
+
+      metaDebug("fbq nao encontrado; fallback do Pixel criado");
+    }
+
+    injectMetaLibrary();
+  }
+
+  function ensureMetaPixel() {
+    if (!hasFbq()) {
+      bootstrapMetaPixel();
+    }
+
+    if (!hasFbq()) {
+      metaDebug("Meta Pixel nao carregado");
+      return false;
+    }
+
+    if (!window.__FI_META_INIT_SENT) {
+      window.fbq("init", META_PIXEL_ID);
+      window.__FI_META_INIT_SENT = true;
+      metaDebug("fbq encontrado");
+    }
+
+    if (!window.__FI_META_PAGEVIEW_SENT) {
+      window.fbq("track", "PageView");
+      window.__FI_META_PAGEVIEW_SENT = true;
+      metaDebug("PageView enviado");
+    }
+
+    return true;
+  }
+
+  function trackMeta(eventName, params, options) {
+    var method = options && options.method ? options.method : "trackCustom";
+
+    if (!ensureMetaPixel()) {
+      metaDebug("Meta Pixel nao carregado", { event_name: eventName });
+      return false;
+    }
 
     try {
       window.fbq(method, eventName, params || {});
+      metaDebug(eventName + " enviado", params || {});
       return true;
     } catch (e) {
+      metaDebug("Erro ao enviar evento Meta", {
+        event_name: eventName,
+        error: e && e.message ? e.message : String(e)
+      });
       return false;
     }
   }
@@ -84,6 +183,7 @@
     var now = Date.now();
 
     if (lastClicks[key] && now - lastClicks[key] < CLICK_COOLDOWN_MS) {
+      metaDebug("Clique Meta ignorado por repeticao rapida", { event_type: eventType });
       return true;
     }
 
@@ -119,22 +219,22 @@
     if (!eventType || shouldIgnoreFastRepeat(element, eventType)) return;
 
     if (eventType === "whatsapp") {
-      trackEvent("trackCustom", "WhatsAppClick", mergeParams(getBaseParams(element), {
+      trackMeta("WhatsAppClick", mergeParams(getBaseParams(element), {
         destination: "whatsapp_group"
       }));
 
-      trackEvent("track", "Lead", {
+      trackMeta("Lead", {
         content_name: "WhatsApp Group Join",
         content_category: "Free Island",
         destination: "whatsapp"
-      });
+      }, { method: "track" });
 
       delayRedirect(event, element);
       return;
     }
 
     if (eventType === "telegram") {
-      trackEvent("trackCustom", "TelegramClick", mergeParams(getBaseParams(element), {
+      trackMeta("TelegramClick", mergeParams(getBaseParams(element), {
         destination: "telegram_channel"
       }));
 
@@ -143,7 +243,7 @@
     }
 
     if (eventType === "offers") {
-      trackEvent("trackCustom", "OfferClick", mergeParams(getBaseParams(element), {
+      trackMeta("OfferClick", mergeParams(getBaseParams(element), {
         destination: "offers",
         affiliate: "amazon"
       }));
@@ -175,7 +275,7 @@
 
     if (!scroll50Sent && pct >= 50) {
       scroll50Sent = true;
-      trackEvent("trackCustom", "Scroll50", {
+      trackMeta("Scroll50", {
         page_url: window.location.href,
         scroll_percent: 50,
         timestamp: Date.now()
@@ -184,7 +284,7 @@
 
     if (!scroll90Sent && pct >= 90) {
       scroll90Sent = true;
-      trackEvent("trackCustom", "Scroll90", {
+      trackMeta("Scroll90", {
         page_url: window.location.href,
         scroll_percent: 90,
         timestamp: Date.now()
@@ -197,15 +297,33 @@
     if (viewContentSent || pageType !== LANDING_PAGE) return;
 
     viewContentSent = true;
-    trackEvent("track", "ViewContent", {
+    trackMeta("ViewContent", {
       content_name: "Free Island Landing",
       content_category: "Promocoes Tech",
       page_type: "landing"
-    });
+    }, { method: "track" });
+  }
+
+  function reportMetaStatus() {
+    window.setTimeout(function () {
+      if (!isDebugMeta()) return;
+
+      if (window.__FI_META_LIBRARY_LOADED) {
+        metaDebug("Pixel carregado");
+      } else if (window.__FI_META_LIBRARY_ERROR) {
+        metaDebug("Meta Pixel nao carregado");
+      } else if (hasFbq()) {
+        metaDebug("fbq encontrado; aguardando confirmacao de fbevents.js");
+      } else {
+        metaDebug("Meta Pixel nao carregado");
+      }
+    }, 2500);
   }
 
   function init() {
+    ensureMetaPixel();
     trackViewContent();
+    reportMetaStatus();
     document.addEventListener("click", trackClick, true);
     window.addEventListener("scroll", trackScrollDepth, { passive: true });
     window.addEventListener("resize", trackScrollDepth, { passive: true });
@@ -213,7 +331,7 @@
   }
 
   window.FreeIslandMetaEvents = {
-    trackEvent: trackEvent,
+    trackMeta: trackMeta,
     getButtonText: getButtonText
   };
 
