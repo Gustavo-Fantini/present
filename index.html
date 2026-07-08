@@ -33,11 +33,11 @@
   /></noscript>
   <!-- End Meta Pixel Code -->
 </head>
-<body>
+<body data-page="landing">
   <div class="page-shell">
     <div class="top-alert">
       <span class="top-alert-dot"></span>
-      Grupo oficial Free Island com vagas abertas agora
+      Grupo gratuito de promocoes tech com vagas abertas agora
     </div>
 
     <header class="hero-card" id="inicio">
@@ -52,12 +52,12 @@
           </span>
         </a>
 
-        <a class="mini-cta" data-track="cta_top_enter" data-whatsapp-link href="#">
+        <a class="mini-cta" data-track="cta_top_enter" data-meta-event="whatsapp" data-section="header" data-whatsapp-link href="#">
           Entrar
         </a>
       </div>
 
-      <div class="hero-badge">Acesso gratuito e direto no WhatsApp</div>
+      <div class="hero-badge">Grupo gratuito de promocoes tech</div>
 
       <div class="logo-orb">
         <img src="fotologo.png" alt="Marca Free Island">
@@ -66,14 +66,14 @@
       <p class="hero-kicker">Promo&ccedil;&otilde;es e cupons no celular</p>
       <h1>Entre no grupo da Free Island</h1>
       <p class="hero-copy">
-        Descontos de <strong>mais de R$20.000</strong> por semana, com promocoes e cupons validados.
+        Descontos de <strong>mais de R$20.000</strong> por semana em tecnologia, setup, eletronicos e perifericos.
       </p>
 
       <div class="cta-stack">
-        <a class="button button-whatsapp" data-track="cta_hero_enter" data-whatsapp-link href="#">
-          Entrar no grupo do WhatsApp
+        <a class="button button-whatsapp" data-track="cta_hero_enter" data-meta-event="whatsapp" data-section="hero" data-whatsapp-link href="#">
+          Entrar no grupo gr&aacute;tis do WhatsApp
         </a>
-        <a class="button button-telegram" data-track="cta_hero_telegram" href="https://t.me/freeislandpromos" target="_blank" rel="noopener noreferrer">
+        <a class="button button-telegram" data-track="cta_hero_telegram" data-meta-event="telegram" data-section="hero" href="https://t.me/freeislandpromos" target="_blank" rel="noopener noreferrer">
           <span class="button-new">NOVO</span>
           <span class="button-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -85,24 +85,24 @@
         </a>
       </div>
 
-      <a class="micro-link" data-track="nav_ofertas" href="ofertas.html">Ver ofertas</a>
+      <a class="micro-link" data-track="nav_ofertas" data-meta-event="offers" data-section="hero" href="ofertas.html">Ver ofertas</a>
     </header>
 
     <main class="main-stack">
       <section class="info-card" id="sobre">
         <div class="section-label">Rapido e direto</div>
         <ul class="trust-list">
-          <li>Promocoes reais e links verificados antes de publicar</li>
-          <li>Grupo gratuito e objetivo, sem flood aleatorio</li>
-          <li>Oportunidades e cupons reunidos em um so lugar</li>
-          <li>Quando o grupo lota, o link muda (fique de olho)</li>
+          <li>Cupons e ofertas verificadas</li>
+          <li>Links seguros antes de publicar</li>
+          <li>Sem spam e sem flood aleatorio</li>
+          <li>Ofertas de tecnologia, setup, eletronicos e perifericos</li>
         </ul>
 
         <div class="small-actions">
-          <a class="small-link small-link-strong" data-track="cta_admin_enter" data-whatsapp-link href="#">
-            Entrar no grupo agora
+          <a class="small-link small-link-strong" data-track="cta_admin_enter" data-meta-event="whatsapp" data-section="info" data-whatsapp-link href="#">
+            Entrar no grupo gr&aacute;tis do WhatsApp
           </a>
-          <a class="small-link" data-track="cta_footer_amazon" href="ofertas.html">
+          <a class="small-link" data-track="cta_footer_amazon" data-meta-event="offers" data-section="info" href="ofertas.html">
             Ver ofertas
           </a>
         </div>
@@ -114,17 +114,17 @@
         <p class="final-copy">
           Se a vaga estiver aberta, o acesso e imediato.
         </p>
-        <a class="button button-whatsapp button-wide" data-track="cta_banner_enter" data-whatsapp-link href="#">
-          Quero entrar agora
+        <a class="button button-whatsapp button-wide" data-track="cta_banner_enter" data-meta-event="whatsapp" data-section="final" data-whatsapp-link href="#">
+          Entrar no grupo gr&aacute;tis do WhatsApp
         </a>
       </section>
     </main>
 
     <footer class="site-footer">
-      <a class="footer-link footer-link-strong" data-track="cta_footer_whatsapp" data-whatsapp-link href="#">
+      <a class="footer-link footer-link-strong" data-track="cta_footer_whatsapp" data-meta-event="whatsapp" data-section="footer" data-whatsapp-link href="#">
         Abrir grupo no WhatsApp
       </a>
-      <a class="footer-link" data-track="cta_footer_amazon" href="ofertas.html">
+      <a class="footer-link" data-track="cta_footer_amazon" data-meta-event="offers" data-section="footer" href="ofertas.html">
         Ofertas
       </a>
       <span class="footer-copy">Copyright <span data-current-year></span> Free Island</span>
@@ -136,8 +136,8 @@
       <strong>Grupo gratuito com vaga</strong>
       <span>Entrar no WhatsApp agora</span>
     </div>
-    <a class="button button-whatsapp" data-track="cta_mobile_enter" data-whatsapp-link href="#">
-      Entrar
+    <a class="button button-whatsapp" data-track="cta_mobile_enter" data-meta-event="whatsapp" data-section="mobile_sticky" data-whatsapp-link href="#">
+      Entrar no grupo
     </a>
   </div>
 
@@ -192,6 +192,7 @@
   </script>
 
   <script defer src="script.js"></script>
+  <script defer src="meta-events.js?v=20260708_1"></script>
   <script
     defer
     src="fi.js?v=20260401_1"
