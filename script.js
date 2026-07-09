@@ -1,6 +1,5 @@
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/JelwkQXy1Mj05NWybBCTQX";
 
-const links = document.querySelectorAll("[data-whatsapp-link]");
 const yearTargets = document.querySelectorAll("[data-current-year]");
 const placeholderUrl = "https://chat.whatsapp.com/SEU-LINK-AQUI";
 
@@ -163,28 +162,39 @@ function showJoinHelp() {
   } catch (e) {}
 }
 
-links.forEach((link) => {
-  link.href = WHATSAPP_GROUP_URL;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
+function applyWhatsAppLinks(root) {
+  var scope = root && root.querySelectorAll ? root : document;
+  var links = scope.querySelectorAll("[data-whatsapp-link]");
 
-  // Improve join success inside in-app browsers (Instagram/Facebook) and Android.
-  link.addEventListener("click", function () {
-    try {
-      if (isInAppBrowser()) {
-        // Show help without blocking navigation; some browsers ignore preventDefault anyway.
-        setTimeout(showJoinHelp, 250);
-      }
-    } catch (e) {}
+  links.forEach((link) => {
+    link.href = WHATSAPP_GROUP_URL;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    if (link.getAttribute("data-whatsapp-ready") === "1") return;
+    link.setAttribute("data-whatsapp-ready", "1");
+
+    // Improve join success inside in-app browsers (Instagram/Facebook) and Android.
+    link.addEventListener("click", function () {
+      try {
+        if (isInAppBrowser()) {
+          // Show help without blocking navigation; some browsers ignore preventDefault anyway.
+          setTimeout(showJoinHelp, 250);
+        }
+      } catch (e) {}
+    });
   });
-});
+}
+
+window.FreeIslandApplyWhatsAppLinks = applyWhatsAppLinks;
+applyWhatsAppLinks(document);
 
 yearTargets.forEach((target) => {
   target.textContent = new Date().getFullYear();
 });
 
 if (WHATSAPP_GROUP_URL === placeholderUrl) {
-  links.forEach((link) => {
+  document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
     link.addEventListener("click", function (event) {
       event.preventDefault();
       window.alert("Atualize o link do grupo em script.js antes de publicar a pagina.");

@@ -127,6 +127,35 @@
     </header>
 
     <main class="main-stack">
+      <section
+        class="latest-promotions-section"
+        id="latest-promotions"
+        aria-labelledby="latest-promotions-title"
+        data-promotions-section
+      >
+        <div class="latest-promotions-head">
+          <div>
+            <div class="section-label">Grupo ativo agora</div>
+            <h2 id="latest-promotions-title">&#128293; &Uacute;ltimas promo&ccedil;&otilde;es publicadas</h2>
+            <p>As ofertas abaixo foram publicadas recentemente no grupo oficial.</p>
+          </div>
+        </div>
+
+        <div class="activity-bar" data-promotions-activity aria-live="polite">
+          <span class="activity-pill" data-activity-count>Carregando promo&ccedil;&otilde;es...</span>
+          <span class="activity-pill" data-activity-latest>Atualizando grupo...</span>
+          <span class="activity-pill" data-activity-members>620 membros recebendo ofertas</span>
+        </div>
+
+        <div class="latest-promotions-grid" data-promotions-list aria-live="polite">
+          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
+          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
+          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
+        </div>
+
+        <p class="latest-promotions-note">Os links completos s&atilde;o enviados primeiro no grupo.</p>
+      </section>
+
       <section class="info-card" id="sobre">
         <div class="section-label">Rapido e direto</div>
         <ul class="trust-list">
@@ -231,6 +260,7 @@
 
   <script defer src="script.js"></script>
   <script defer src="meta-events.js?v=20260708_2"></script>
+  <script defer src="supabase-promotions.js?v=20260708_1"></script>
   <script
     defer
     src="fi.js?v=20260401_1"
