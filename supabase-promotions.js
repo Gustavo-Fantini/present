@@ -1,10 +1,11 @@
 (function () {
   var SUPABASE_URL = "https://jdeszhiykkviymtkdbit.supabase.co";
   var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
-  var FREE_ISLAND_MEMBER_COUNT = 620;
+  var FALLBACK_MEMBER_COUNT = 620;
   var FALLBACK_IMAGE = "assets/logo_sem_fundo.png";
   var REQUEST_TIMEOUT_MS = 5000;
   var PROMOTIONS_LIMIT = 5;
+  var AUDIENCE_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   var BR_TIMEZONE = "America/Sao_Paulo";
 
   function isDebugPromos() {
@@ -131,6 +132,68 @@
     });
   }
 
+  function getAudienceStatsUrl() {
+    return buildSupabaseUrl("/rest/v1/audience_stats", {
+      select: "total_members,whatsapp_members,telegram_members,status,updated_at",
+      id: "eq.community",
+      limit: "1"
+    });
+  }
+
+  function formatAudienceNumber(value) {
+    var count = Number(value);
+    if (!Number.isFinite(count) || count < 0) return "0";
+    try {
+      return new Intl.NumberFormat("pt-BR").format(Math.trunc(count));
+    } catch (error) {
+      return String(Math.trunc(count));
+    }
+  }
+
+  function renderAudienceStats(section, audience) {
+    var membersTarget = section.querySelector("[data-activity-members]");
+    var totalMembers = Number(audience && audience.total_members);
+    var whatsappMembers = Number(audience && audience.whatsapp_members);
+    var telegramMembers = Number(audience && audience.telegram_members);
+    var updatedAt = audience && audience.updated_at ? new Date(audience.updated_at) : null;
+
+    if (!membersTarget) return;
+    if (!Number.isFinite(totalMembers) || totalMembers <= 0) totalMembers = FALLBACK_MEMBER_COUNT;
+
+    membersTarget.textContent = "\uD83D\uDC65 " + formatAudienceNumber(totalMembers) + " pessoas acompanhando as ofertas";
+    if (Number.isFinite(whatsappMembers) && Number.isFinite(telegramMembers)) {
+      membersTarget.title = "WhatsApp: " + formatAudienceNumber(whatsappMembers) +
+        " | Telegram: " + formatAudienceNumber(telegramMembers) +
+        (updatedAt && !Number.isNaN(updatedAt.getTime())
+          ? " | Atualizado em " + updatedAt.toLocaleString("pt-BR", { timeZone: BR_TIMEZONE })
+          : "");
+    }
+  }
+
+  function refreshAudienceStats(section) {
+    return fetchJsonWithRetry(getAudienceStatsUrl(), {
+      method: "GET",
+      headers: supabaseHeaders()
+    })
+      .then(function (rows) {
+        var audience = Array.isArray(rows) && rows.length ? rows[0] : null;
+        renderAudienceStats(section, audience);
+        if (audience) debugLog("Supabase audience: contador atualizado", audience);
+      })
+      .catch(function (error) {
+        debugLog("Supabase audience: mantendo valor de seguranca", error && error.message ? error.message : String(error));
+        renderAudienceStats(section, null);
+      });
+  }
+
+  function startAudienceUpdates(section) {
+    renderAudienceStats(section, null);
+    refreshAudienceStats(section);
+    window.setInterval(function () {
+      refreshAudienceStats(section);
+    }, AUDIENCE_REFRESH_INTERVAL_MS);
+  }
+
   function getBRDateKey(date) {
     try {
       var parts = new Intl.DateTimeFormat("en-CA", {
@@ -245,7 +308,6 @@
   function updateActivityBar(section, promotions, count24h) {
     var countTarget = section.querySelector("[data-activity-count]");
     var latestTarget = section.querySelector("[data-activity-latest]");
-    var membersTarget = section.querySelector("[data-activity-members]");
     var latestText = promotions.length ? formatRelativeTimeBR(promotions[0].published_at) : "";
 
     if (countTarget) {
@@ -259,10 +321,6 @@
       } else {
         latestTarget.hidden = true;
       }
-    }
-
-    if (membersTarget) {
-      membersTarget.textContent = "\uD83D\uDC65 " + FREE_ISLAND_MEMBER_COUNT + " membros recebendo ofertas";
     }
 
     debugLog("Supabase promotions: " + count24h + " promo\u00e7\u00f5es nas \u00faltimas 24h");
@@ -300,6 +358,8 @@
     var countUrl;
 
     if (!section || typeof fetch !== "function") return;
+
+    startAudienceUpdates(section);
 
     promotionsUrl = getPromotionsUrl();
     countUrl = getLast24hCountUrl();

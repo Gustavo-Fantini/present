@@ -208,3 +208,14 @@ Depois disso, publique (Render vai redeploy).
 - Visual profissional alinhado com a marca
 - Texto curto, claro e focado em ação
 - Estrutura pronta para futuras atualizações
+
+## Contador dinamico da comunidade
+
+`supabase-promotions.js` consulta a linha `community` da tabela
+`public.audience_stats` a cada cinco minutos e mostra a soma atual de membros
+dos grupos de destino do WhatsApp e do canal de destino do Telegram.
+
+O scraper atualiza essa linha com a `service_role`. A landing usa somente a
+chave publica `anon` e tem permissao apenas de leitura nas colunas publicas.
+Antes do primeiro uso, execute `docs/supabase-audience-stats.sql` do repositorio
+do scraper no projeto Supabase das promocoes.
