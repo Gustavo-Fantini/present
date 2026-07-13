@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#050a14">
+  <title>Free Island | Abrindo link</title>
+  <link rel="icon" href="../assets/logo_sem_fundo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050a14;
+      --panel: rgba(12, 21, 41, 0.94);
+      --line: rgba(255, 255, 255, 0.1);
+      --text: #f8fbff;
+      --muted: #aebada;
+      --green: #27e067;
+      --green-deep: #159144;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      color: var(--text);
+      font-family: "Outfit", sans-serif;
+      background:
+        radial-gradient(circle at top center, rgba(39, 224, 103, 0.18), transparent 32%),
+        radial-gradient(circle at 80% 20%, rgba(57, 200, 255, 0.15), transparent 28%),
+        linear-gradient(180deg, #060c18 0%, #050913 100%);
+    }
+
+    .redirect-card {
+      width: min(100%, 420px);
+      padding: 24px 18px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.36);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .logo {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .logo img {
+      width: 66px;
+      height: auto;
+      display: block;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Archivo Black", sans-serif;
+      font-size: clamp(1.75rem, 8vw, 2.55rem);
+      line-height: 0.96;
+      letter-spacing: -0.045em;
+      text-transform: uppercase;
+    }
+
+    p {
+      margin: 12px auto 0;
+      max-width: 30ch;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      margin: 20px auto 0;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.12);
+      border-top-color: var(--green);
+      animation: spin 0.8s linear infinite;
+    }
+
+    .fallback-link {
+      min-height: 52px;
+      margin-top: 18px;
+      padding: 0 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px;
+      background: linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
+      color: #fff;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .fallback-link.is-visible {
+      display: inline-flex;
+    }
+
+    .error-state .spinner {
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="redirect-card" aria-live="polite">
+    <div class="logo">
+      <img src="../assets/logo_sem_fundo.png" alt="Free Island">
+    </div>
+    <h1 data-title>Abrindo link seguro</h1>
+    <p data-message>Estamos preparando seu redirecionamento.</p>
+    <div class="spinner" aria-hidden="true"></div>
+    <a class="fallback-link" data-fallback-link rel="noopener noreferrer">Abrir link</a>
+  </main>
+
+  <script defer src="redirect.js?v=20260713_1"></script>
+</body>
+</html>

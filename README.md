@@ -28,6 +28,62 @@ Sempre que um grupo encher, troque apenas esse link e publique novamente.
 5. Use `.` como Publish Directory.
 6. Publique.
 
+## Encurtador proprio com o dominio da landing
+
+A rota `/r/` funciona como redirecionador por slug usando Supabase.
+Formato do link curto:
+
+```text
+https://freeisland.onrender.com/r/?s=gabinete178
+```
+
+O destino real fica salvo na tabela `public.short_links`, entao o link grande de afiliado nao precisa aparecer no post.
+Por seguranca, a pagina nao aceita destino aberto por query string; ela busca apenas slugs cadastrados por voce.
+
+### 1) Criar tabelas no Supabase
+
+Rode o arquivo [`supabase-short-links.sql`](supabase-short-links.sql) no SQL Editor do Supabase.
+
+Ele cria:
+
+- `public.short_links`: lista dos slugs e destinos
+- `public.short_link_clicks`: log simples de cliques
+- RLS para anon ler apenas links ativos
+- RLS para anon inserir cliques
+
+### 2) Cadastrar um link curto
+
+Exemplo:
+
+```sql
+insert into public.short_links (slug, target_url, title)
+values (
+  'gabinete178',
+  'https://www.awin1.com/cread.php?...',
+  'Gabinete aquario por R$178'
+)
+on conflict (slug) do update set
+  target_url = excluded.target_url,
+  title = excluded.title,
+  active = true,
+  updated_at = now();
+```
+
+Depois use:
+
+```text
+https://freeisland.onrender.com/r/?s=gabinete178
+```
+
+### 3) Ver cliques
+
+```sql
+select slug, count(*) as clicks
+from public.short_link_clicks
+group by slug
+order by clicks desc;
+```
+
 ## Métricas (Supabase) - 1 Linha Por Acesso
 
 Se você quer métricas próprias por acesso (1 linha por page load), a página já vem com `fi.js`.
