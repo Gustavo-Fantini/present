@@ -30,15 +30,15 @@ Sempre que um grupo encher, troque apenas esse link e publique novamente.
 
 ## Encurtador proprio com o dominio da landing
 
-A rota `/r/` funciona como redirecionador por slug usando Supabase.
-Formato do link curto:
+A rota `/r/` funciona como redirecionador por slug usando Supabase:
 
 ```text
 https://freeisland.onrender.com/r/?s=gabinete178
 ```
 
-O destino real fica salvo na tabela `public.short_links`, entao o link grande de afiliado nao precisa aparecer no post.
-Por seguranca, a pagina nao aceita destino aberto por query string; ela busca apenas slugs cadastrados por voce.
+O destino real fica salvo em `public.short_links`, portanto o link grande de afiliado nao aparece no post. A pagina nao aceita URL de destino pela query string e o banco permite apenas links oficiais Awin da Free Island para KaBuM!, AliExpress e Adidas.
+
+Como este projeto e um Render Static Site, a rota carrega uma pagina minima e redireciona pelo navegador. Ela nao responde com HTTP 302 no servidor. Para um 302 real seria necessario migrar essa rota para um Web Service ou funcao de borda.
 
 ### 1) Criar tabelas no Supabase
 
@@ -48,10 +48,29 @@ Ele cria:
 
 - `public.short_links`: lista dos slugs e destinos
 - `public.short_link_clicks`: log simples de cliques
-- RLS para anon ler apenas links ativos
-- RLS para anon inserir cliques
+- `public.resolve_short_link`: unica operacao publica para resolver e registrar o clique
+- RLS sem leitura ou escrita anonima direta nas tabelas
+- validacao do publisher, anunciante e dominio de destino Awin
 
-### 2) Cadastrar um link curto
+O script pode ser executado novamente para atualizar uma instalacao anterior. Links antigos que nao passam na validacao sao desativados.
+
+### 2) Integrar o scraper
+
+O `python-backend` cadastra os slugs automaticamente usando a `service_role`, que deve existir somente no `.env` privado do servidor:
+
+```env
+AWIN_FIRST_PARTY_SHORTENER_ENABLED=1
+AWIN_FIRST_PARTY_SHORTENER_BASE_URL=https://freeisland.onrender.com/r/?s=
+AWIN_FIRST_PARTY_PUBLISHER_ID=2802012
+AWIN_FIRST_PARTY_SHORTENER_TABLE=short_links
+AWIN_FIRST_PARTY_SHORTENER_TIMEOUT_SECONDS=10
+```
+
+O redirecionador proprio e usado apenas quando a Awin nao devolve `shortUrl`. O link direto oficial da Awin continua sendo o fallback final se o Supabase estiver indisponivel.
+
+Nunca coloque `SUPABASE_SERVICE_ROLE_KEY` no JavaScript da landing page ou em um repositorio Git. A `anon key` presente em `r/redirect.js` e publica por definicao e so pode executar a RPC limitada pelo SQL.
+
+### 3) Cadastrar manualmente para teste
 
 Exemplo:
 
@@ -59,7 +78,7 @@ Exemplo:
 insert into public.short_links (slug, target_url, title)
 values (
   'gabinete178',
-  'https://www.awin1.com/cread.php?...',
+  'https://www.awin1.com/cread.php?awinmid=17729&awinaffid=2802012&ued=https%3A%2F%2Fwww.kabum.com.br%2Fproduto%2F123%2Fproduto',
   'Gabinete aquario por R$178'
 )
 on conflict (slug) do update set
@@ -75,7 +94,7 @@ Depois use:
 https://freeisland.onrender.com/r/?s=gabinete178
 ```
 
-### 3) Ver cliques
+### 4) Ver cliques
 
 ```sql
 select slug, count(*) as clicks

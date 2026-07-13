@@ -4,6 +4,12 @@
   var REDIRECT_DELAY_MS = 450;
   var REQUEST_TIMEOUT_MS = 5000;
   var FALLBACK_HOME = "/";
+  var AWIN_PUBLISHER_ID = "2802012";
+  var AWIN_ADVERTISERS = {
+    "17729": ["kabum.com.br"],
+    "18879": ["aliexpress.com"],
+    "79926": ["adidas.com.br"]
+  };
 
   function isDebug() {
     try {
@@ -101,17 +107,23 @@
   }
 
   function getShortLink(slug) {
-    var url = buildUrl("/rest/v1/short_links", {
-      select: "slug,target_url,title",
-      slug: "eq." + slug,
-      active: "eq.true",
-      or: "(expires_at.is.null,expires_at.gt.now())",
-      limit: "1"
-    });
+    var url = buildUrl("/rest/v1/rpc/resolve_short_link", {});
+    var payload = {
+      p_slug: slug,
+      p_referrer: document.referrer || null,
+      p_page_url: window.location.href,
+      p_user_agent: navigator.userAgent || null
+    };
 
-    debugLog("buscando slug", { slug: slug, url: url });
+    debugLog("buscando slug", { slug: slug });
 
-    return fetchWithTimeout(url, { method: "GET", headers: headers() })
+    return fetchWithTimeout(url, {
+      method: "POST",
+      headers: headers({
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify(payload)
+    })
       .then(function (response) {
         if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
@@ -124,31 +136,28 @@
   function isSafeTarget(url) {
     try {
       var parsed = new URL(url);
-      return parsed.protocol === "https:";
+      var advertiserId = parsed.searchParams.get("awinmid") || "";
+      var publisherId = parsed.searchParams.get("awinaffid") || "";
+      var destinationValue = parsed.searchParams.get("ued") || "";
+      var allowedDomains = AWIN_ADVERTISERS[advertiserId] || [];
+      var destination = new URL(destinationValue);
+      var destinationHost = destination.hostname.toLowerCase();
+
+      return parsed.protocol === "https:"
+        && parsed.hostname.toLowerCase() === "www.awin1.com"
+        && parsed.pathname === "/cread.php"
+        && !parsed.username
+        && !parsed.password
+        && publisherId === AWIN_PUBLISHER_ID
+        && destination.protocol === "https:"
+        && !destination.username
+        && !destination.password
+        && allowedDomains.some(function (domain) {
+          return destinationHost === domain || destinationHost.endsWith("." + domain);
+        });
     } catch (e) {
       return false;
     }
-  }
-
-  function registerClick(slug) {
-    var payload = {
-      slug: slug,
-      referrer: document.referrer || null,
-      page_url: window.location.href,
-      user_agent: navigator.userAgent || null
-    };
-
-    return fetch(buildUrl("/rest/v1/short_link_clicks", {}), {
-      method: "POST",
-      headers: headers({
-        "Content-Type": "application/json",
-        Prefer: "return=minimal"
-      }),
-      body: JSON.stringify(payload),
-      keepalive: true
-    }).catch(function (error) {
-      debugLog("falha ao registrar clique", error && error.message ? error.message : String(error));
-    });
   }
 
   function redirectTo(link) {
@@ -162,8 +171,6 @@
 
     debugLog("redirecionando", link);
     setState(title, "Redirecionando com seguranca.", targetUrl);
-
-    registerClick(link.slug);
 
     window.setTimeout(function () {
       window.location.replace(targetUrl);
