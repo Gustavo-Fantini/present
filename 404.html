@@ -4,19 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
   <title>Free Island | Abrindo link</title>
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      color: #f8fbff;
+      font: 600 18px/1.5 system-ui, sans-serif;
+      text-align: center;
+      background: #050a14;
+    }
+    main {
+      width: min(100%, 420px);
+      padding: 28px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      background: #0c1529;
+    }
+    h1 { margin: 0; }
+    p { color: #aebada; }
+    a { color: #27e067; }
+  </style>
 </head>
 <body>
-  <p>Abrindo link seguro...</p>
-  <script>
-    (function () {
-      var match = window.location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,79})\/(meli|amzn|shopee|ali|kabum|adidas|terabyte)\/?$/i);
-      if (!match) {
-        window.location.replace("/");
-        return;
-      }
-      window.location.replace("/r/?s=" + encodeURIComponent(match[2].toLowerCase() + "-" + match[1].toLowerCase()));
-    }());
-  </script>
+  <main aria-live="polite">
+    <h1 data-title>Abrindo link seguro</h1>
+    <p data-message>Estamos preparando seu redirecionamento.</p>
+    <a data-fallback-link href="/">Voltar para a Free Island</a>
+  </main>
+  <script defer src="/r/redirect.js?v=20260715_2"></script>
 </body>
 </html>
