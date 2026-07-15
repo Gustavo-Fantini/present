@@ -5,6 +5,11 @@ recentes, público total e métricas dos links próprios.
 
 ## Publicação no Render
 
+O arquivo `render.yaml` versiona a regra para novos deploys via Blueprint. Em
+um Static Site já criado manualmente, confirme uma única vez no Dashboard do
+Render a regra abaixo; o arquivo `404.html` mantém um redirecionamento seguro
+de contingência enquanto essa regra não estiver ativa.
+
 1. Conecte este repositório como Static Site.
 2. Deixe o Build Command vazio.
 3. Use `.` como Publish Directory.

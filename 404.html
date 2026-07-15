@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Free Island | Abrindo link</title>
+</head>
+<body>
+  <p>Abrindo link seguro...</p>
+  <script>
+    (function () {
+      var match = window.location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,79})\/(meli|amzn|shopee|ali|kabum|adidas|terabyte)\/?$/i);
+      if (!match) {
+        window.location.replace("/");
+        return;
+      }
+      window.location.replace("/r/?s=" + encodeURIComponent(match[2].toLowerCase() + "-" + match[1].toLowerCase()));
+    }());
+  </script>
+</body>
+</html>

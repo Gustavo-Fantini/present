@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: freeisland
+    runtime: static
+    buildCommand: echo "Free Island static site"
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /:productid/:network
+        destination: /r/index.html
