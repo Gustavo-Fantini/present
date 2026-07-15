@@ -140,6 +140,25 @@
     });
   }
 
+  function getClickStatsUrl() {
+    return buildSupabaseUrl("/rest/v1/rpc/short_link_click_stats", {});
+  }
+
+  function fetchClickStats() {
+    return fetchJsonWithRetry(getClickStatsUrl(), {
+      method: "POST",
+      headers: supabaseHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ p_hours: 24 })
+    })
+      .then(function (rows) {
+        return Array.isArray(rows) && rows.length ? rows[0] : null;
+      })
+      .catch(function (error) {
+        debugLog("Supabase clicks: contador indisponivel", error && error.message ? error.message : String(error));
+        return null;
+      });
+  }
+
   function formatAudienceNumber(value) {
     var count = Number(value);
     if (!Number.isFinite(count) || count < 0) return "0";
@@ -305,10 +324,12 @@
     return card;
   }
 
-  function updateActivityBar(section, promotions, count24h) {
+  function updateActivityBar(section, promotions, count24h, clickStats) {
     var countTarget = section.querySelector("[data-activity-count]");
     var latestTarget = section.querySelector("[data-activity-latest]");
+    var clicksTarget = section.querySelector("[data-activity-clicks]");
     var latestText = promotions.length ? formatRelativeTimeBR(promotions[0].published_at) : "";
+    var totalClicks = Number(clickStats && clickStats.total_clicks);
 
     if (countTarget) {
       countTarget.textContent = "\uD83D\uDFE2 " + count24h + " promo\u00e7\u00f5es nas \u00faltimas 24h";
@@ -323,11 +344,28 @@
       }
     }
 
+    if (clicksTarget) {
+      if (Number.isFinite(totalClicks)) {
+        clicksTarget.textContent = "\uD83D\uDD17 " + formatAudienceNumber(totalClicks) + " cliques em ofertas nas ultimas 24h";
+        clicksTarget.hidden = false;
+        if (clickStats && clickStats.by_network) {
+          clicksTarget.title = Object.keys(clickStats.by_network)
+            .sort()
+            .map(function (network) {
+              return network + ": " + formatAudienceNumber(clickStats.by_network[network]);
+            })
+            .join(" | ");
+        }
+      } else {
+        clicksTarget.hidden = true;
+      }
+    }
+
     debugLog("Supabase promotions: " + count24h + " promo\u00e7\u00f5es nas \u00faltimas 24h");
     if (latestText) debugLog("Supabase promotions: \u00faltima promo\u00e7\u00e3o " + latestText);
   }
 
-  function renderPromotions(section, promotions, count24h) {
+  function renderPromotions(section, promotions, count24h, clickStats) {
     var list = section.querySelector("[data-promotions-list]");
     if (!list) return;
 
@@ -341,7 +379,7 @@
       list.appendChild(createPromotionCard(promotion, index));
     });
 
-    updateActivityBar(section, promotions, count24h);
+    updateActivityBar(section, promotions, count24h, clickStats);
 
     if (typeof window.FreeIslandApplyWhatsAppLinks === "function") {
       window.FreeIslandApplyWhatsAppLinks(section);
@@ -374,14 +412,15 @@
         method: "GET",
         headers: supabaseHeaders()
       }),
-      fetchCountWithRetry(countUrl)
+      fetchCountWithRetry(countUrl),
+      fetchClickStats()
     ])
       .then(function (results) {
         var promotions = Array.isArray(results[0]) ? results[0] : [];
         var count24h = Number.isFinite(results[1]) ? results[1] : 0;
 
         debugLog("Supabase promotions: " + promotions.length + " promo\u00e7\u00f5es carregadas", promotions);
-        renderPromotions(section, promotions, count24h);
+        renderPromotions(section, promotions, count24h, results[2]);
       })
       .catch(function (error) {
         debugLog("Supabase promotions: erro", error && error.message ? error.message : String(error));

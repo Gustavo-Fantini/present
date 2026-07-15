@@ -1,221 +1,94 @@
 # Free Island Landing Page
 
-Landing page estática para captar entradas no grupo de promoções pelo WhatsApp.
+Landing estática da Free Island com captação para o WhatsApp, promoções
+recentes, público total e métricas dos links próprios.
 
-## Arquivos principais
+## Publicação no Render
 
-- `index.html`: estrutura da página
-- `styles.css`: visual da landing
-- `script.js`: link central do grupo do WhatsApp
-- `assets/logo_sem_fundo.png`: sua logo
+1. Conecte este repositório como Static Site.
+2. Deixe o Build Command vazio.
+3. Use `.` como Publish Directory.
+4. Em `Redirects/Rewrites`, adicione:
 
-## Como trocar o link do grupo
+| Source | Destination | Action |
+| --- | --- | --- |
+| `/:productid/:network` | `/r/index.html` | `Rewrite` |
 
-Abra `script.js` e altere esta linha:
+Essa regra permite URLs como:
+
+```text
+https://freeisland.onrender.com/943392/kabum
+https://freeisland.onrender.com/B0BK9HTNJP/amzn
+```
+
+A rota legada `https://freeisland.onrender.com/r/?s=<slug>` continua válida.
+
+## Banco do redirecionador
+
+Execute `supabase-short-links.sql` no projeto Supabase usado pelo scraper. O
+script é idempotente e cria/atualiza:
+
+- `short_links`: destino validado, rede e produto;
+- `short_link_clicks`: um evento por acesso;
+- `resolve_short_link`: resolve e registra o clique sem expor as tabelas;
+- `short_link_click_stats`: total e divisão por rede nas últimas 24 horas.
+
+O JavaScript público usa somente a chave `anon`. A `service_role` permanece
+exclusivamente no backend do scraper. Não existe parâmetro público que aceite
+uma URL arbitrária, evitando transformar o domínio em open redirect.
+
+## Rotas aceitas
+
+| Sufixo | Loja |
+| --- | --- |
+| `meli` | Mercado Livre |
+| `amzn` | Amazon |
+| `shopee` | Shopee |
+| `ali` | AliExpress via Awin |
+| `kabum` | KaBuM! via Awin |
+| `adidas` | Adidas via Awin |
+| `terabyte` | TerabyteShop |
+
+O SQL valida o domínio, o anunciante e a identificação própria antes de
+permitir um redirecionamento ativo.
+
+## Promoções recentes
+
+`supabase-promotions.js` carrega as cinco promoções mais recentes de
+`posted_promotions`. A imagem segue esta prioridade:
+
+1. `image_public_url`, que contém os bytes exatos enviados pelo bot;
+2. `image_url`, apenas para compatibilidade;
+3. arte neutra local.
+
+No repositório do scraper, execute também
+`docs/supabase-posted-promotions-media.sql` para criar as colunas, remover
+duplicatas por `content_hash` e tornar público o bucket `promotion-images`.
+
+## Métricas visíveis
+
+A página atualiza periodicamente:
+
+- audiência combinada dos destinos em `audience_stats`;
+- cliques em links Free Island nas últimas 24 horas;
+- promoções mais recentes.
+
+`fi.js` mantém as métricas próprias de navegação em `page_sessions`.
+
+## Link do grupo
+
+Altere somente `WHATSAPP_GROUP_URL` em `script.js` quando o convite principal
+mudar:
 
 ```js
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/SEU-LINK-AQUI";
 ```
 
-Sempre que um grupo encher, troque apenas esse link e publique novamente.
+## Arquivos principais
 
-## Como publicar no Render
-
-1. Suba estes arquivos para um repositório Git.
-2. No Render, crie um novo projeto do tipo Static Site.
-3. Conecte o repositório.
-4. Deixe o Build Command vazio.
-5. Use `.` como Publish Directory.
-6. Publique.
-
-## Encurtador proprio com o dominio da landing
-
-A rota `/r/` funciona como redirecionador por slug usando Supabase:
-
-```text
-https://freeisland.onrender.com/r/?s=gabinete178
-```
-
-O destino real fica salvo em `public.short_links`, portanto o link grande de afiliado nao aparece no post. A pagina nao aceita URL de destino pela query string e o banco permite apenas links oficiais Awin da Free Island para KaBuM!, AliExpress e Adidas.
-
-Como este projeto e um Render Static Site, a rota carrega uma pagina minima e redireciona pelo navegador. Ela nao responde com HTTP 302 no servidor. Para um 302 real seria necessario migrar essa rota para um Web Service ou funcao de borda.
-
-### 1) Criar tabelas no Supabase
-
-Rode o arquivo [`supabase-short-links.sql`](supabase-short-links.sql) no SQL Editor do Supabase.
-
-Ele cria:
-
-- `public.short_links`: lista dos slugs e destinos
-- `public.short_link_clicks`: log simples de cliques
-- `public.resolve_short_link`: unica operacao publica para resolver e registrar o clique
-- RLS sem leitura ou escrita anonima direta nas tabelas
-- validacao do publisher, anunciante e dominio de destino Awin
-
-O script pode ser executado novamente para atualizar uma instalacao anterior. Links antigos que nao passam na validacao sao desativados.
-
-### 2) Integrar o scraper
-
-O `python-backend` cadastra os slugs automaticamente usando a `service_role`, que deve existir somente no `.env` privado do servidor:
-
-```env
-AWIN_FIRST_PARTY_SHORTENER_ENABLED=1
-AWIN_FIRST_PARTY_SHORTENER_BASE_URL=https://freeisland.onrender.com/r/?s=
-AWIN_FIRST_PARTY_PUBLISHER_ID=2802012
-AWIN_FIRST_PARTY_SHORTENER_TABLE=short_links
-AWIN_FIRST_PARTY_SHORTENER_TIMEOUT_SECONDS=10
-```
-
-O redirecionador proprio e usado apenas quando a Awin nao devolve `shortUrl`. O link direto oficial da Awin continua sendo o fallback final se o Supabase estiver indisponivel.
-
-Nunca coloque `SUPABASE_SERVICE_ROLE_KEY` no JavaScript da landing page ou em um repositorio Git. A `anon key` presente em `r/redirect.js` e publica por definicao e so pode executar a RPC limitada pelo SQL.
-
-### 3) Cadastrar manualmente para teste
-
-Exemplo:
-
-```sql
-insert into public.short_links (slug, target_url, title)
-values (
-  'gabinete178',
-  'https://www.awin1.com/cread.php?awinmid=17729&awinaffid=2802012&ued=https%3A%2F%2Fwww.kabum.com.br%2Fproduto%2F123%2Fproduto',
-  'Gabinete aquario por R$178'
-)
-on conflict (slug) do update set
-  target_url = excluded.target_url,
-  title = excluded.title,
-  active = true,
-  updated_at = now();
-```
-
-Depois use:
-
-```text
-https://freeisland.onrender.com/r/?s=gabinete178
-```
-
-### 4) Ver cliques
-
-```sql
-select slug, count(*) as clicks
-from public.short_link_clicks
-group by slug
-order by clicks desc;
-```
-
-## Métricas (Supabase) - 1 Linha Por Acesso
-
-Se você quer métricas próprias por acesso (1 linha por page load), a página já vem com `fi.js`.
-Ele faz **upsert** no Supabase usando **apenas a anon key** (public) e grava:
-- 1 linha por acesso (`page_view_id`)
-- tempo na tela (duration/visible)
-- scroll máximo
-- cliques agregados por botão (`click_counts`) + flags/contagens de WhatsApp/Instagram
-
-### 1) Crie a tabela e policy no Supabase
-
-No Supabase SQL Editor, rode:
-
-```sql
-create table if not exists public.page_sessions (
-  page_view_id text primary key,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-
-  visitor_id text,
-  session_id text,
-
-  page_path text,
-  page_url text,
-  referrer text,
-
-  utm_source text,
-  utm_medium text,
-  utm_campaign text,
-  utm_content text,
-  utm_term text,
-
-  user_agent text,
-  language text,
-  timezone text,
-
-  screen_w int,
-  screen_h int,
-  viewport_w int,
-  viewport_h int,
-
-  duration_ms int,
-  visible_ms int,
-  max_scroll_pct int,
-
-  click_any boolean,
-  click_counts jsonb,
-
-  whatsapp_clicks int,
-  instagram_clicks int,
-  external_redirects int,
-  redirected_to_whatsapp boolean,
-  redirected_to_instagram boolean,
-
-  flush_reason text,
-  closed boolean
-);
-
-create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
-begin
-  new.updated_at = now();
-  return new;
-end $$;
-
-drop trigger if exists trg_page_sessions_updated_at on public.page_sessions;
-create trigger trg_page_sessions_updated_at
-before update on public.page_sessions
-for each row execute function public.set_updated_at();
-
-alter table public.page_sessions enable row level security;
-
-grant usage on schema public to anon, authenticated;
-grant insert, update on table public.page_sessions to anon, authenticated;
-
--- Simples e direto: permite INSERT por anon (bom para começar).
--- Como fazemos UPSERT, precisa liberar INSERT e UPDATE.
-drop policy if exists "allow_anon_upsert_page_sessions" on public.page_sessions;
-create policy "allow_anon_upsert_page_sessions"
-on public.page_sessions
-as permissive
-for all
-to anon
-using (true)
-with check (true);
-```
-
-### 2) Configure o `analytics.js`
-
-Nada a configurar: `fi.js` já está apontando para seu Supabase e usa a anon key.
-
-Depois disso, publique (Render vai redeploy).
-
-### Eventos que você vai ver
-
-- 1 linha por acesso em `public.page_sessions`
-- `click_counts` é um JSON com a contagem por `data-track`
-- `flush_reason` indica quando salvou: `page_view`, `t_60s`, `pagehide`, etc
-
-## Estrategia de conversao usada
-
-- CTA direto para o WhatsApp sem passar por Linktree
-- Visual profissional alinhado com a marca
-- Texto curto, claro e focado em ação
-- Estrutura pronta para futuras atualizações
-
-## Contador dinamico da comunidade
-
-`supabase-promotions.js` consulta a linha `community` da tabela
-`public.audience_stats` a cada cinco minutos e mostra a soma atual de membros
-dos grupos de destino do WhatsApp e do canal de destino do Telegram.
-
-O scraper atualiza essa linha com a `service_role`. A landing usa somente a
-chave publica `anon` e tem permissao apenas de leitura nas colunas publicas.
-Antes do primeiro uso, execute `docs/supabase-audience-stats.sql` do repositorio
-do scraper no projeto Supabase das promocoes.
+- `index.html`: estrutura da landing;
+- `styles.css`: visual;
+- `script.js`: CTAs;
+- `supabase-promotions.js`: promoções, audiência e cliques;
+- `r/index.html` e `r/redirect.js`: redirecionador seguro;
+- `supabase-short-links.sql`: schema, validação e RPCs.
