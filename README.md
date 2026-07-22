@@ -57,6 +57,33 @@ uma URL arbitrária, evitando transformar o domínio em open redirect.
 O SQL valida o domínio, o anunciante e a identificação própria antes de
 permitir um redirecionamento ativo.
 
+## Conformidade Amazon Associados
+
+- `index.html` e `ofertas.html` exibem a declaração exigida e identificam cada
+  link Amazon como publicidade;
+- os links públicos da candidatura apontam diretamente para `amazon.com.br`,
+  incluem `tag=freeislandt0e-20` e preservam a origem do tráfego;
+- links curtos `/amzn` exibem uma tela de confirmação com o Link Especial
+  rastreado, em vez de redirecionar automaticamente;
+- `ofertas.html` mantém conteúdo editorial público e datado para demonstrar a
+  curadoria original da Free Island;
+- `guias.html` reúne dez guias originais e datados sobre decisão de compra,
+  independentes dos links patrocinados;
+- `robots.txt` e `sitemap.xml` tornam as páginas públicas localizáveis durante
+  a revisão da candidatura.
+
+Se uma nova candidatura gerar outro ID de rastreamento, substitua o ID antigo
+em todos os arquivos e também em `AMAZON_ASSOCIATE_TAG` no scraper antes de
+publicar links. Valide a landing com:
+
+```powershell
+rg -n "freeislandt0e-20|tag=|AMAZON_TAG" index.html ofertas.html guias.html r/redirect.js supabase-short-links.sql
+```
+
+Durante a análise da candidatura, mantenha links Amazon diretos e identificados
+na landing e nas redes sociais declaradas. Não solicite compras para apoiar a
+Free Island nem ofereça incentivos pelo uso dos links.
+
 ## Promoções recentes
 
 `supabase-promotions.js` carrega as cinco promoções mais recentes de
@@ -92,6 +119,8 @@ const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/SEU-LINK-AQUI";
 ## Arquivos principais
 
 - `index.html`: estrutura da landing;
+- `ofertas.html`: links especiais identificados e curadoria;
+- `guias.html`: conteúdo editorial e metodologia de curadoria;
 - `styles.css`: visual;
 - `script.js`: CTAs;
 - `supabase-promotions.js`: promoções, audiência e cliques;

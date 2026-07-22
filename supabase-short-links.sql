@@ -52,7 +52,7 @@ as $$
       and value ~* '[?&]ued=https%3a%2f%2f([^%&/]+\.)?adidas\.com\.br(%2f|/|&|$)'
     when 'amzn' then
       value ~* '^https://(www\.)?amazon\.com(\.br)?/(dp|gp/product)/[a-z0-9]{10}([/?#]|$)'
-      and value ~* '[?&]tag=freeisland01-20(&|$)'
+      and value ~* '[?&]tag=freeislandt0e-20(&|$)'
     when 'meli' then
       value ~* '^https://((www\.)?(mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com)/|meli\.la/)'
     when 'shopee' then

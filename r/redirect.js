@@ -4,7 +4,7 @@
   var REDIRECT_DELAY_MS = 300;
   var REQUEST_TIMEOUT_MS = 5000;
   var FALLBACK_HOME = "/";
-  var AMAZON_TAG = "freeisland01-20";
+  var AMAZON_TAG = "freeislandt0e-20";
   var NETWORKS = ["meli", "amzn", "shopee", "ali", "kabum", "adidas", "terabyte"];
   var AWIN_PUBLISHER_ID = "2802012";
   var AWIN_ADVERTISERS = {
@@ -184,9 +184,26 @@
     var targetUrl = link && link.target_url;
     var network = normalizeNetwork((link && link.network) || identity.network);
     var title = link && link.title ? link.title : "Abrindo oferta";
+    var fallback;
+    var disclosure;
 
     if (!network || !isSafeTarget(targetUrl, network)) {
       setError("Destino invalido. Use apenas links oficiais cadastrados.");
+      return;
+    }
+
+    if (network === "amzn") {
+      fallback = document.querySelector("[data-fallback-link]");
+      disclosure = document.querySelector("[data-amazon-disclosure]");
+      document.body.classList.add("confirmation-state");
+      if (disclosure) disclosure.hidden = false;
+      if (fallback) {
+        fallback.textContent = "Continuar para a Amazon";
+        fallback.rel = "sponsored noopener";
+        fallback.referrerPolicy = "strict-origin-when-cross-origin";
+      }
+      debugLog("aguardando confirmacao Amazon", { target: targetUrl });
+      setState(title, "Publicidade: confirme para abrir o Link Especial rastreado na Amazon.com.br.", targetUrl);
       return;
     }
 
