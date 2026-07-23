@@ -53,6 +53,11 @@ uma URL arbitrária, evitando transformar o domínio em open redirect.
 | `kabum` | KaBuM! via Awin |
 | `adidas` | Adidas via Awin |
 | `terabyte` | TerabyteShop |
+| `netshoes` | Netshoes via Rakuten Advertising |
+
+Em uma instalacao que ja executou o SQL principal, rode
+`supabase-netshoes-short-links-migration.sql` antes de ativar os links
+Rakuten/Netshoes no scraper.
 
 O SQL valida o domínio, o anunciante e a identificação própria antes de
 permitir um redirecionamento ativo.

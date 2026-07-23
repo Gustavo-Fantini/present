@@ -60,6 +60,11 @@ as $$
     when 'terabyte' then
       value ~* '^https://(www\.)?terabyteshop\.com\.br/produto/[0-9]+(/|\?|$)'
       and value ~* '[?&]p=[0-9]{2,20}(&|$)'
+    when 'netshoes' then
+      value ~* '^https://click\.linksynergy\.com/(deeplink|fs-bin/click)\?'
+      and value ~* '[?&]id=[a-z0-9_-]{6,100}(&|$)'
+      and value ~* '[?&]mid=[0-9]{1,15}(&|$)'
+      and value ~* '[?&]murl=https%3a%2f%2f([^%&/]+\.)?netshoes\.com\.br(%2f|/|&|$)'
     else false
   end;
 $$;
@@ -77,7 +82,8 @@ as $$
     or public.short_link_target_allowed(value, 'amzn')
     or public.short_link_target_allowed(value, 'meli')
     or public.short_link_target_allowed(value, 'shopee')
-    or public.short_link_target_allowed(value, 'terabyte');
+    or public.short_link_target_allowed(value, 'terabyte')
+    or public.short_link_target_allowed(value, 'netshoes');
 $$;
 
 update public.short_links
@@ -89,17 +95,18 @@ set network = case
   when public.short_link_target_allowed(target_url, 'meli') then 'meli'
   when public.short_link_target_allowed(target_url, 'shopee') then 'shopee'
   when public.short_link_target_allowed(target_url, 'terabyte') then 'terabyte'
+  when public.short_link_target_allowed(target_url, 'netshoes') then 'netshoes'
   else network
 end
 where network is null
-   or network not in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte');
+   or network not in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte', 'netshoes');
 
 update public.short_links
 set product_id = left(
   regexp_replace(
     case
-      when slug ~ '^(meli|amzn|shopee|ali|kabum|adidas|terabyte)-' then
-        regexp_replace(slug, '^(meli|amzn|shopee|ali|kabum|adidas|terabyte)-', '')
+      when slug ~ '^(meli|amzn|shopee|ali|kabum|adidas|terabyte|netshoes)-' then
+        regexp_replace(slug, '^(meli|amzn|shopee|ali|kabum|adidas|terabyte|netshoes)-', '')
       else slug
     end,
     '[^a-z0-9-]+',
@@ -115,7 +122,7 @@ set active = false
 where active = true
   and (
     network is null
-    or network not in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte')
+    or network not in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte', 'netshoes')
     or product_id is null
     or product_id !~ '^[a-z0-9][a-z0-9-]{1,79}$'
     or not coalesce(public.short_link_target_allowed(target_url, network), false)
@@ -127,7 +134,7 @@ alter table public.short_links
 
 alter table public.short_links
   add constraint short_links_network_allowed
-  check (not active or (network is not null and network in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte')));
+  check (not active or (network is not null and network in ('meli', 'amzn', 'shopee', 'ali', 'kabum', 'adidas', 'terabyte', 'netshoes')));
 
 alter table public.short_links
   add constraint short_links_product_id_format

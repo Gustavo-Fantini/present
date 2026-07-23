@@ -5,7 +5,7 @@
   var REQUEST_TIMEOUT_MS = 5000;
   var FALLBACK_HOME = "/";
   var AMAZON_TAG = "freeislandt0e-20";
-  var NETWORKS = ["meli", "amzn", "shopee", "ali", "kabum", "adidas", "terabyte"];
+  var NETWORKS = ["meli", "amzn", "shopee", "ali", "kabum", "adidas", "terabyte", "netshoes"];
   var AWIN_PUBLISHER_ID = "2802012";
   var AWIN_ADVERTISERS = {
     kabum: { id: "17729", domains: ["kabum.com.br"] },
@@ -36,7 +36,7 @@
     try {
       var params = new URLSearchParams(window.location.search);
       var querySlug = String(params.get("s") || params.get("slug") || "").trim().toLowerCase();
-      var pathMatch = window.location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,79})\/(meli|amzn|shopee|ali|kabum|adidas|terabyte)\/?$/i);
+      var pathMatch = window.location.pathname.match(/^\/([a-z0-9][a-z0-9-]{1,79})\/(meli|amzn|shopee|ali|kabum|adidas|terabyte|netshoes)\/?$/i);
       var network;
       var productId;
 
@@ -47,7 +47,7 @@
       }
 
       if (!/^[a-z0-9][a-z0-9-]{1,100}$/.test(querySlug)) return null;
-      network = normalizeNetwork((querySlug.match(/^(meli|amzn|shopee|ali|kabum|adidas|terabyte)-/) || [])[1]);
+      network = normalizeNetwork((querySlug.match(/^(meli|amzn|shopee|ali|kabum|adidas|terabyte|netshoes)-/) || [])[1]);
       return { slug: querySlug, network: network, productId: "" };
     } catch (error) {
       return null;
@@ -147,6 +147,27 @@
       && hostMatches(destination.hostname.toLowerCase(), advertiser.domains);
   }
 
+  function isSafeRakutenTarget(parsed) {
+    var destinationValue;
+    var destination;
+
+    try {
+      destinationValue = parsed.searchParams.get("murl") || "";
+      destination = new URL(destinationValue);
+    } catch (error) {
+      return false;
+    }
+
+    return parsed.hostname.toLowerCase() === "click.linksynergy.com"
+      && (parsed.pathname === "/deeplink" || parsed.pathname === "/fs-bin/click")
+      && /^[a-z0-9_-]{6,100}$/i.test(parsed.searchParams.get("id") || "")
+      && /^\d{1,15}$/.test(parsed.searchParams.get("mid") || "")
+      && destination.protocol === "https:"
+      && !destination.username
+      && !destination.password
+      && hostMatches(destination.hostname.toLowerCase(), ["netshoes.com.br"]);
+  }
+
   function isSafeTarget(url, network) {
     var parsed;
     var host;
@@ -176,6 +197,9 @@
       return hostMatches(host, ["terabyteshop.com.br"])
         && /^\/produto\/\d+(?:\/|$)/i.test(parsed.pathname)
         && /^\d{2,20}$/.test(parsed.searchParams.get("p") || "");
+    }
+    if (network === "netshoes") {
+      return isSafeRakutenTarget(parsed);
     }
     return false;
   }
