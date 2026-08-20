@@ -4,7 +4,7 @@
   var REDIRECT_DELAY_MS = 300;
   var REQUEST_TIMEOUT_MS = 5000;
   var FALLBACK_HOME = "/";
-  var AMAZON_TAG = "freeislandt0e-20";
+  var AMAZON_TAG = "freeisland0de-20";
   var NETWORKS = ["meli", "amzn", "shopee", "ali", "kabum", "adidas", "terabyte", "netshoes"];
   var AWIN_PUBLISHER_ID = "2802012";
   var AWIN_ADVERTISERS = {
@@ -168,6 +168,40 @@
       && hostMatches(destination.hostname.toLowerCase(), ["netshoes.com.br"]);
   }
 
+  function normalizeAmazonTarget(url) {
+    var parsed;
+    var retained = [];
+    try {
+      parsed = new URL(url);
+    } catch (error) {
+      return "";
+    }
+    if (
+      parsed.protocol !== "https:"
+      || parsed.username
+      || parsed.password
+      || (parsed.port && parsed.port !== "443")
+      || !hostMatches(parsed.hostname.toLowerCase().replace(/^www\./, ""), ["amazon.com.br", "amazon.com"])
+      || !/^\/(dp|gp\/product)\/[a-z0-9]{10}(?:[/?#]|$)/i.test(parsed.pathname)
+    ) return "";
+
+    parsed.searchParams.forEach(function (value, key) {
+      if (key.toLowerCase() !== "tag") retained.push([key, value]);
+    });
+    parsed.search = "";
+    retained.forEach(function (pair) { parsed.searchParams.append(pair[0], pair[1]); });
+    parsed.searchParams.append("tag", AMAZON_TAG);
+    return parsed.toString();
+  }
+
+  function hasExactAmazonTag(parsed) {
+    var tags = [];
+    parsed.searchParams.forEach(function (value, key) {
+      if (key.toLowerCase() === "tag") tags.push(value);
+    });
+    return tags.length === 1 && tags[0] === AMAZON_TAG;
+  }
+
   function isSafeTarget(url, network) {
     var parsed;
     var host;
@@ -185,7 +219,7 @@
     if (network === "amzn") {
       return hostMatches(host, ["amazon.com.br", "amazon.com"])
         && /^\/(dp|gp\/product)\/[a-z0-9]{10}(?:[/?#]|$)/i.test(parsed.pathname)
-        && parsed.searchParams.get("tag") === AMAZON_TAG;
+        && hasExactAmazonTag(parsed);
     }
     if (network === "meli") {
       return hostMatches(host, ["mercadolivre.com.br", "mercadolivre.com", "mercadolibre.com", "meli.la"]);
@@ -211,6 +245,7 @@
     var fallback;
     var disclosure;
 
+    if (network === "amzn") targetUrl = normalizeAmazonTarget(targetUrl);
     if (!network || !isSafeTarget(targetUrl, network)) {
       setError("Destino invalido. Use apenas links oficiais cadastrados.");
       return;

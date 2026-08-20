@@ -67,7 +67,7 @@ permitir um redirecionamento ativo.
 - `index.html` e `ofertas.html` exibem a declaração exigida e identificam cada
   link Amazon como publicidade;
 - os links públicos da candidatura apontam diretamente para `amazon.com.br`,
-  incluem `tag=freeislandt0e-20` e preservam a origem do tráfego;
+  incluem `tag=freeisland0de-20` e preservam a origem do tráfego;
 - links curtos `/amzn` exibem uma tela de confirmação com o Link Especial
   rastreado, em vez de redirecionar automaticamente;
 - `ofertas.html` mantém conteúdo editorial público e datado para demonstrar a
@@ -82,7 +82,7 @@ em todos os arquivos e também em `AMAZON_ASSOCIATE_TAG` no scraper antes de
 publicar links. Valide a landing com:
 
 ```powershell
-rg -n "freeislandt0e-20|tag=|AMAZON_TAG" index.html ofertas.html guias.html r/redirect.js supabase-short-links.sql
+rg -n "freeisland0de-20|tag=|AMAZON_TAG" index.html ofertas.html guias.html r/redirect.js supabase-short-links.sql
 ```
 
 Durante a análise da candidatura, mantenha links Amazon diretos e identificados

@@ -5,6 +5,22 @@ alter table public.short_links
 alter table public.short_links
   drop constraint if exists short_links_network_allowed;
 
+create or replace function public.amazon_link_has_current_tag(value text)
+returns boolean
+language sql
+immutable
+set search_path = public
+as $$
+  select
+    value ~* '[?&]tag=freeisland0de-20(&|#|$)'
+    and regexp_replace(
+      value,
+      '([?&])tag=freeisland0de-20(&|#|$)',
+      '\1\2',
+      'i'
+    ) !~* '[?&]tag=';
+$$;
+
 create or replace function public.short_link_target_allowed(value text, link_network text)
 returns boolean
 language sql
@@ -29,7 +45,7 @@ as $$
       and value ~* '[?&]ued=https%3a%2f%2f([^%&/]+\.)?adidas\.com\.br(%2f|/|&|$)'
     when 'amzn' then
       value ~* '^https://(www\.)?amazon\.com(\.br)?/(dp|gp/product)/[a-z0-9]{10}([/?#]|$)'
-      and value ~* '[?&]tag=freeislandt0e-20(&|$)'
+      and public.amazon_link_has_current_tag(value)
     when 'meli' then
       value ~* '^https://((www\.)?(mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com)/|meli\.la/)'
     when 'shopee' then
