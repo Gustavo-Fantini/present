@@ -1,7 +1,106 @@
-const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/JelwkQXy1Mj05NWybBCTQX";
+const WHATSAPP_FALLBACK_URL = "https://chat.whatsapp.com/JelwkQXy1Mj05NWybBCTQX";
+const FREE_ISLAND_SUPABASE_URL = "https://jdeszhiykkviymtkdbit.supabase.co";
+const FREE_ISLAND_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
+const FREE_ISLAND_OPERATION_SLUG = "free-island-principal";
+const WHATSAPP_ROUTE_CACHE_MS = 30000;
+const WHATSAPP_ROUTE_TIMEOUT_MS = 4500;
 
 const yearTargets = document.querySelectorAll("[data-current-year]");
 const placeholderUrl = "https://chat.whatsapp.com/SEU-LINK-AQUI";
+let activeWhatsAppGroupUrl = WHATSAPP_FALLBACK_URL;
+let routeResolvedAt = 0;
+let routeRequest = null;
+let routeSnapshotLoaded = false;
+
+window.FreeIslandPublicConfig = {
+  supabaseUrl: FREE_ISLAND_SUPABASE_URL,
+  supabaseAnonKey: FREE_ISLAND_SUPABASE_ANON_KEY,
+  operationSlug: FREE_ISLAND_OPERATION_SLUG
+};
+
+function normalizeWhatsAppGroupUrl(value) {
+  try {
+    var url = new URL(String(value || ""));
+    var code = url.pathname.replace(/^\/+|\/+$/g, "");
+    if (url.protocol !== "https:" || url.hostname !== "chat.whatsapp.com") return "";
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(code)) return "";
+    return "https://chat.whatsapp.com/" + code;
+  } catch (e) {
+    return "";
+  }
+}
+
+function selectAvailableWhatsAppGroup(groups) {
+  var configured = (Array.isArray(groups) ? groups : []).filter(function (group) {
+    var inviteUrl = normalizeWhatsAppGroupUrl(group && group.invite_url);
+    var operationSlug = String(group && group.operation_slug || "");
+    return inviteUrl && operationSlug === FREE_ISLAND_OPERATION_SLUG && group.landing_enabled !== false;
+  });
+  if (!configured.length) throw new Error("whatsapp_routing_not_configured");
+
+  configured.sort(function (left, right) {
+    return Number(left.priority || 100) - Number(right.priority || 100) ||
+      String(left.destination_id || left.name || "").localeCompare(String(right.destination_id || right.name || ""));
+  });
+
+  var available = configured.find(function (group) {
+    var members = Number(group.members);
+    var capacity = Number(group.capacity_limit || 990);
+    return Number.isFinite(members) && Number.isFinite(capacity) && members < capacity && group.status !== "unavailable";
+  });
+  return available ? normalizeWhatsAppGroupUrl(available.invite_url) : "";
+}
+
+function fetchWhatsAppGroupRoute() {
+  var params = new URLSearchParams({
+    select: "whatsapp_groups,status,updated_at",
+    id: "eq.community",
+    limit: "1"
+  });
+  var controller = new AbortController();
+  var timer = window.setTimeout(function () { controller.abort(); }, WHATSAPP_ROUTE_TIMEOUT_MS);
+  return fetch(FREE_ISLAND_SUPABASE_URL + "/rest/v1/audience_stats?" + params.toString(), {
+    method: "GET",
+    cache: "no-store",
+    signal: controller.signal,
+    headers: {
+      apikey: FREE_ISLAND_SUPABASE_ANON_KEY,
+      Authorization: "Bearer " + FREE_ISLAND_SUPABASE_ANON_KEY,
+      "Cache-Control": "no-cache"
+    }
+  }).then(function (response) {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    return response.json();
+  }).then(function (rows) {
+    if (!Array.isArray(rows) || !rows.length) throw new Error("audience_snapshot_unavailable");
+    return selectAvailableWhatsAppGroup(rows[0].whatsapp_groups);
+  }).finally(function () {
+    window.clearTimeout(timer);
+  });
+}
+
+function resolveWhatsAppGroupUrl(forceRefresh) {
+  if (!forceRefresh && routeResolvedAt && Date.now() - routeResolvedAt < WHATSAPP_ROUTE_CACHE_MS) {
+    return Promise.resolve(activeWhatsAppGroupUrl);
+  }
+  if (routeRequest) return routeRequest;
+  routeRequest = fetchWhatsAppGroupRoute()
+    .then(function (url) {
+      activeWhatsAppGroupUrl = url;
+      routeResolvedAt = Date.now();
+      routeSnapshotLoaded = true;
+      applyWhatsAppLinks(document);
+      return url;
+    })
+    .catch(function () {
+      if (!routeSnapshotLoaded) activeWhatsAppGroupUrl = WHATSAPP_FALLBACK_URL;
+      return activeWhatsAppGroupUrl;
+    })
+    .finally(function () {
+      routeRequest = null;
+    });
+  return routeRequest;
+}
 
 function isInAppBrowser() {
   try {
@@ -100,8 +199,9 @@ function showJoinHelp() {
     var openBtn = mkBtn("Tentar abrir");
     openBtn.onclick = function () {
       try {
-        var target = WHATSAPP_GROUP_URL;
-        if (isAndroid()) target = makeAndroidIntent(WHATSAPP_GROUP_URL);
+        var groupUrl = activeWhatsAppGroupUrl || WHATSAPP_FALLBACK_URL;
+        var target = groupUrl;
+        if (isAndroid()) target = makeAndroidIntent(groupUrl);
         window.location.href = target;
       } catch (e) {}
     };
@@ -110,10 +210,10 @@ function showJoinHelp() {
     copyBtn.onclick = function () {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(WHATSAPP_GROUP_URL);
+          navigator.clipboard.writeText(activeWhatsAppGroupUrl || WHATSAPP_FALLBACK_URL);
         } else {
           var tmp = document.createElement("textarea");
-          tmp.value = WHATSAPP_GROUP_URL;
+          tmp.value = activeWhatsAppGroupUrl || WHATSAPP_FALLBACK_URL;
           tmp.style.position = "fixed";
           tmp.style.left = "-9999px";
           document.body.appendChild(tmp);
@@ -167,7 +267,7 @@ function applyWhatsAppLinks(root) {
   var links = scope.querySelectorAll("[data-whatsapp-link]");
 
   links.forEach((link) => {
-    link.href = WHATSAPP_GROUP_URL;
+    link.href = activeWhatsAppGroupUrl || "#";
     link.target = "_blank";
     link.rel = "noopener noreferrer";
 
@@ -175,7 +275,28 @@ function applyWhatsAppLinks(root) {
     link.setAttribute("data-whatsapp-ready", "1");
 
     // Improve join success inside in-app browsers (Instagram/Facebook) and Android.
-    link.addEventListener("click", function () {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      var pendingWindow = null;
+      if (!isInAppBrowser()) {
+        try { pendingWindow = window.open("about:blank", "_blank"); } catch (e) {}
+      }
+      link.setAttribute("aria-busy", "true");
+      resolveWhatsAppGroupUrl(true).then(function (groupUrl) {
+        if (!groupUrl) {
+          if (pendingWindow) pendingWindow.close();
+          window.alert("Os grupos estão momentaneamente lotados. Tente novamente em alguns minutos.");
+          return;
+        }
+        var target = isAndroid() && isInAppBrowser() ? makeAndroidIntent(groupUrl) : groupUrl;
+        if (pendingWindow && !pendingWindow.closed && target === groupUrl) {
+          pendingWindow.location.replace(groupUrl);
+        } else {
+          window.location.href = target;
+        }
+      }).finally(function () {
+        link.removeAttribute("aria-busy");
+      });
       try {
         if (isInAppBrowser()) {
           // Show help without blocking navigation; some browsers ignore preventDefault anyway.
@@ -187,13 +308,16 @@ function applyWhatsAppLinks(root) {
 }
 
 window.FreeIslandApplyWhatsAppLinks = applyWhatsAppLinks;
+window.FreeIslandResolveWhatsAppGroup = resolveWhatsAppGroupUrl;
 applyWhatsAppLinks(document);
+resolveWhatsAppGroupUrl(false);
+window.setInterval(function () { resolveWhatsAppGroupUrl(true); }, 60000);
 
 yearTargets.forEach((target) => {
   target.textContent = new Date().getFullYear();
 });
 
-if (WHATSAPP_GROUP_URL === placeholderUrl) {
+if (WHATSAPP_FALLBACK_URL === placeholderUrl) {
   document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
     link.addEventListener("click", function (event) {
       event.preventDefault();

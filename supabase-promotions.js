@@ -1,10 +1,13 @@
 (function () {
-  var SUPABASE_URL = "https://jdeszhiykkviymtkdbit.supabase.co";
-  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
+  var PUBLIC_CONFIG = window.FreeIslandPublicConfig || {};
+  var SUPABASE_URL = PUBLIC_CONFIG.supabaseUrl || "https://jdeszhiykkviymtkdbit.supabase.co";
+  var SUPABASE_ANON_KEY = PUBLIC_CONFIG.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
+  var MAIN_OPERATION_SLUG = PUBLIC_CONFIG.operationSlug || "free-island-principal";
   var FALLBACK_MEMBER_COUNT = 620;
   var FALLBACK_IMAGE = "assets/logo_sem_fundo.png";
   var REQUEST_TIMEOUT_MS = 5000;
   var PROMOTIONS_LIMIT = 5;
+  var PROMOTIONS_QUERY_LIMIT = 25;
   var AUDIENCE_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   var BR_TIMEZONE = "America/Sao_Paulo";
 
@@ -115,19 +118,55 @@
 
   function getPromotionsUrl() {
     return buildSupabaseUrl("/rest/v1/posted_promotions", {
-      select: "id,published_at,expires_at,product_title,price_text,old_price_text,store,image_public_url,image_url",
+      select: "id,published_at,expires_at,product_title,price_text,old_price_text,store,image_public_url,image_url,content_hash",
+      "metadata->>operation_slug": "eq." + MAIN_OPERATION_SLUG,
       or: "(expires_at.is.null,expires_at.gt.now())",
       order: "published_at.desc",
-      limit: String(PROMOTIONS_LIMIT)
+      limit: String(PROMOTIONS_QUERY_LIMIT)
     });
   }
 
-  function getLast24hCountUrl() {
-    var iso24hAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  function getStartOfTodayIso() {
+    var formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: BR_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    });
+    var currentParts = {};
+    formatter.formatToParts(new Date()).forEach(function (part) {
+      if (part.type !== "literal") currentParts[part.type] = Number(part.value);
+    });
+    var target = Date.UTC(currentParts.year, currentParts.month - 1, currentParts.day, 0, 0, 0);
+    var guess = target;
+    for (var attempt = 0; attempt < 3; attempt += 1) {
+      var zonedParts = {};
+      formatter.formatToParts(new Date(guess)).forEach(function (part) {
+        if (part.type !== "literal") zonedParts[part.type] = Number(part.value);
+      });
+      var represented = Date.UTC(
+        zonedParts.year,
+        zonedParts.month - 1,
+        zonedParts.day,
+        zonedParts.hour,
+        zonedParts.minute,
+        zonedParts.second
+      );
+      guess += target - represented;
+    }
+    return new Date(guess).toISOString();
+  }
+
+  function getTodayCountUrl() {
 
     return buildSupabaseUrl("/rest/v1/posted_promotions", {
       select: "id",
-      published_at: "gte." + iso24hAgo,
+      "metadata->>operation_slug": "eq." + MAIN_OPERATION_SLUG,
+      published_at: "gte." + getStartOfTodayIso(),
       limit: "1"
     });
   }
@@ -272,6 +311,27 @@
     return promotion.image_public_url || promotion.image_url || FALLBACK_IMAGE;
   }
 
+  function promotionIdentity(promotion) {
+    if (promotion && promotion.content_hash) return "hash:" + String(promotion.content_hash);
+    return [promotion && promotion.store, promotion && promotion.product_title, promotion && promotion.price_text]
+      .map(function (value) {
+        return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+      })
+      .join("|");
+  }
+
+  function deduplicatePromotions(promotions) {
+    var seen = {};
+    var unique = [];
+    (Array.isArray(promotions) ? promotions : []).forEach(function (promotion) {
+      var identity = promotionIdentity(promotion);
+      if (!identity || seen[identity]) return;
+      seen[identity] = true;
+      unique.push(promotion);
+    });
+    return unique.slice(0, PROMOTIONS_LIMIT);
+  }
+
   function createPromotionCard(promotion, index) {
     var card = createElement("article", "promotion-card");
     var media = createElement("div", "promotion-media");
@@ -332,7 +392,7 @@
     var totalClicks = Number(clickStats && clickStats.total_clicks);
 
     if (countTarget) {
-      countTarget.textContent = "\uD83D\uDFE2 " + count24h + " promo\u00e7\u00f5es nas \u00faltimas 24h";
+      countTarget.textContent = "\uD83D\uDFE2 " + count24h + " promo\u00e7\u00f5es publicadas hoje";
     }
 
     if (latestTarget) {
@@ -361,7 +421,7 @@
       }
     }
 
-    debugLog("Supabase promotions: " + count24h + " promo\u00e7\u00f5es nas \u00faltimas 24h");
+    debugLog("Supabase promotions: " + count24h + " promo\u00e7\u00f5es publicadas hoje");
     if (latestText) debugLog("Supabase promotions: \u00faltima promo\u00e7\u00e3o " + latestText);
   }
 
@@ -400,7 +460,7 @@
     startAudienceUpdates(section);
 
     promotionsUrl = getPromotionsUrl();
-    countUrl = getLast24hCountUrl();
+    countUrl = getTodayCountUrl();
 
     debugLog("Supabase promotions: request iniciado", {
       promotions_url: promotionsUrl,
@@ -416,7 +476,7 @@
       fetchClickStats()
     ])
       .then(function (results) {
-        var promotions = Array.isArray(results[0]) ? results[0] : [];
+        var promotions = deduplicatePromotions(results[0]);
         var count24h = Number.isFinite(results[1]) ? results[1] : 0;
 
         debugLog("Supabase promotions: " + promotions.length + " promo\u00e7\u00f5es carregadas", promotions);

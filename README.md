@@ -91,8 +91,10 @@ Free Island nem ofereça incentivos pelo uso dos links.
 
 ## Promoções recentes
 
-`supabase-promotions.js` carrega as cinco promoções mais recentes de
-`posted_promotions`. A imagem segue esta prioridade:
+`supabase-promotions.js` carrega as cinco promoções mais recentes da operação
+`free-island-principal`, remove duplicatas e conta somente as publicações do dia
+no horário de Brasília. Registros de outras operações, como Girls Island, não
+aparecem na landing. A imagem segue esta prioridade:
 
 1. `image_public_url`, que contém os bytes exatos enviados pelo bot;
 2. `image_url`, apenas para compatibilidade;
@@ -112,14 +114,13 @@ A página atualiza periodicamente:
 
 `fi.js` mantém as métricas próprias de navegação em `page_sessions`.
 
-## Link do grupo
+## Links dos grupos
 
-Altere somente `WHATSAPP_GROUP_URL` em `script.js` quando o convite principal
-mudar:
-
-```js
-const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/SEU-LINK-AQUI";
-```
+Os convites são configurados em cada destino WhatsApp da operação Main no
+painel do Hunter. `script.js` consulta `audience_stats` a cada clique, escolhe o
+grupo de maior prioridade abaixo de 990 membros e volta automaticamente ao
+grupo prioritário quando uma vaga é aberta. `WHATSAPP_FALLBACK_URL` é usado
+somente quando o Supabase está temporariamente indisponível.
 
 ## Arquivos principais
 
