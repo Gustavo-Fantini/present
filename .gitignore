@@ -1,5 +1,7 @@
 Thumbs.db
 Desktop.ini
+__pycache__/
+*.py[cod]
 _render_probe/
 _render_probe2/
 _render_live_index.html
