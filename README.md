@@ -38,9 +38,12 @@ script é idempotente e cria/atualiza:
 - `resolve_short_link`: resolve e registra o clique sem expor as tabelas;
 - `short_link_click_stats`: total e divisão por rede nas últimas 24 horas.
 
-O JavaScript público usa somente a chave `anon`. A `service_role` permanece
-exclusivamente no backend do scraper. Não existe parâmetro público que aceite
-uma URL arbitrária, evitando transformar o domínio em open redirect.
+O redirecionador legado usa uma chave pública `anon` limitada pela RPC e as
+métricas opcionais usam outra chave `anon`, carregada somente após consentimento.
+Promoções e lotação dos grupos são entregues por `GET /api/public/landing` sem
+credenciais no payload. A `service_role` permanece exclusivamente no servidor.
+Não existe parâmetro público que aceite uma URL arbitrária, evitando transformar
+o domínio em open redirect.
 
 ## Rotas aceitas
 
@@ -67,13 +70,15 @@ permitir um redirecionamento ativo.
 - `index.html` e `ofertas.html` exibem a declaração exigida e identificam cada
   link Amazon como publicidade;
 - os links públicos da candidatura apontam diretamente para `amazon.com.br`,
-  incluem `tag=freeisland0de-20` e preservam a origem do tráfego;
+  incluem `tag=freeislandt0b-20` e preservam a origem do tráfego;
 - links curtos `/amzn` exibem uma tela de confirmação com o Link Especial
   rastreado, em vez de redirecionar automaticamente;
-- `ofertas.html` mantém conteúdo editorial público e datado para demonstrar a
-  curadoria original da Free Island;
-- `guias.html` reúne dez guias originais e datados sobre decisão de compra,
-  independentes dos links patrocinados;
+- `ofertas.html` apresenta seleções por categoria sem copiar preço, estoque,
+  estrelas ou imagens da Amazon;
+- `guias.html` indexa dez artigos com URL própria, autoria e data, cujo conteúdo
+  permanece completo sem os links patrocinados;
+- `sobre.html`, `politica-editorial.html`, `privacidade.html`, `termos.html` e
+  `contato.html` tornam autoria, tratamento de dados e responsabilidade claros;
 - `robots.txt` e `sitemap.xml` tornam as páginas públicas localizáveis durante
   a revisão da candidatura.
 
@@ -82,7 +87,8 @@ em todos os arquivos e também em `AMAZON_ASSOCIATE_TAG` no scraper antes de
 publicar links. Valide a landing com:
 
 ```powershell
-rg -n "freeisland0de-20|tag=|AMAZON_TAG" index.html ofertas.html guias.html r/redirect.js supabase-short-links.sql
+rg -n "freeislandt0b-20|tag=|AMAZON_TAG" index.html ofertas.html guias.html guias/ r/redirect.js supabase-short-links.sql
+python scripts/audit_amazon_site.py
 ```
 
 Durante a análise da candidatura, mantenha links Amazon diretos e identificados
@@ -91,14 +97,17 @@ Free Island nem ofereça incentivos pelo uso dos links.
 
 ## Promoções recentes
 
-`supabase-promotions.js` carrega as cinco promoções mais recentes da operação
-`free-island-principal`, remove duplicatas e conta somente as publicações do dia
-no horário de Brasília. Registros de outras operações, como Girls Island, não
-aparecem na landing. A imagem segue esta prioridade:
+`supabase-promotions.js` consome o snapshot sanitizado do backend e mostra no
+máximo cinco publicações recentes da operação `free-island-principal`. O
+servidor remove duplicatas, itens vencidos ou antigos, registros de outras
+operações e qualquer produto Amazon. O painel não recebe preços nem URLs de
+produto ou afiliado, IDs ou hashes internos; o contador diário também elimina
+duplicatas. Assim, a landing não reproduz preço, disponibilidade ou imagem
+Amazon sem uma API autorizada. A imagem segue esta
+prioridade:
 
-1. `image_public_url`, que contém os bytes exatos enviados pelo bot;
-2. `image_url`, apenas para compatibilidade;
-3. arte neutra local.
+1. URL HTTPS do bucket público `promotion-images`;
+2. arte neutra local quando a URL não passa pela validação.
 
 No repositório do scraper, execute também
 `docs/supabase-posted-promotions-media.sql` para criar as colunas, remover
@@ -109,26 +118,30 @@ duplicatas por `content_hash` e tornar público o bucket `promotion-images`.
 A página atualiza periodicamente:
 
 - audiência combinada dos destinos em `audience_stats`;
-- cliques em links Free Island nas últimas 24 horas;
 - promoções mais recentes.
 
-`fi.js` mantém as métricas próprias de navegação em `page_sessions`.
+`privacy-consent.js` deixa apenas recursos essenciais ativos por padrão. Somente
+após consentimento ele carrega `fi.js` (métricas próprias em `page_sessions`) e
+`meta-events.js` (Meta Pixel).
 
 ## Links dos grupos
 
 Os convites são configurados em cada destino WhatsApp da operação Main no
-painel do Hunter. `script.js` consulta `audience_stats` a cada clique, escolhe o
+painel do Hunter. `script.js` consulta a API pública a cada clique, escolhe o
 grupo de maior prioridade abaixo de 990 membros e volta automaticamente ao
 grupo prioritário quando uma vaga é aberta. `WHATSAPP_FALLBACK_URL` é usado
-somente quando o Supabase está temporariamente indisponível.
+somente quando o backend está temporariamente indisponível.
 
 ## Arquivos principais
 
 - `index.html`: estrutura da landing;
 - `ofertas.html`: links especiais identificados e curadoria;
-- `guias.html`: conteúdo editorial e metodologia de curadoria;
+- `guias.html` e `guias/`: índice e dez publicações editoriais;
 - `styles.css`: visual;
-- `script.js`: CTAs;
-- `supabase-promotions.js`: promoções, audiência e cliques;
+- `public-data.js`: cliente sem credenciais da API pública;
+- `script.js`: CTAs e roteamento dos grupos;
+- `supabase-promotions.js`: renderiza o snapshot sanitizado;
+- `privacy-consent.js`: consentimento e carregamento opcional de métricas;
+- `scripts/audit_amazon_site.py`: auditoria local e HTTPS da candidatura;
 - `r/index.html` e `r/redirect.js`: redirecionador seguro;
 - `supabase-short-links.sql`: schema, validação e RPCs.

@@ -1,204 +1,25 @@
 (function () {
-  var PUBLIC_CONFIG = window.FreeIslandPublicConfig || {};
-  var SUPABASE_URL = PUBLIC_CONFIG.supabaseUrl || "https://jdeszhiykkviymtkdbit.supabase.co";
-  var SUPABASE_ANON_KEY = PUBLIC_CONFIG.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
-  var MAIN_OPERATION_SLUG = PUBLIC_CONFIG.operationSlug || "free-island-principal";
-  var FALLBACK_MEMBER_COUNT = 620;
   var FALLBACK_IMAGE = "assets/logo_sem_fundo.png";
-  var REQUEST_TIMEOUT_MS = 5000;
+  var FALLBACK_MEMBER_COUNT = 620;
   var PROMOTIONS_LIMIT = 5;
-  var PROMOTIONS_QUERY_LIMIT = 25;
-  var AUDIENCE_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   var BR_TIMEZONE = "America/Sao_Paulo";
 
-  function isDebugPromos() {
+  function isDebug() {
     try {
       var params = new URLSearchParams(window.location.search);
       return params.get("debugPromos") === "true" || params.get("debugMeta") === "true";
-    } catch (e) {
+    } catch (error) {
       return false;
     }
   }
 
   function debugLog(message, data) {
-    if (!isDebugPromos() || !window.console) return;
-
-    if (typeof data === "undefined") {
-      console.log("[Free Island Promos]", message);
-    } else {
-      console.log("[Free Island Promos]", message, data);
-    }
+    if (!isDebug() || !window.console) return;
+    if (typeof data === "undefined") console.log("[Free Island Promos]", message);
+    else console.log("[Free Island Promos]", message, data);
   }
 
-  function buildSupabaseUrl(path, params) {
-    var url = new URL(path, SUPABASE_URL);
-    var key;
-
-    for (key in params) {
-      if (Object.prototype.hasOwnProperty.call(params, key)) {
-        url.searchParams.set(key, params[key]);
-      }
-    }
-
-    return url.toString();
-  }
-
-  function supabaseHeaders(extra) {
-    var headers = {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: "Bearer " + SUPABASE_ANON_KEY
-    };
-    var key;
-
-    for (key in extra || {}) {
-      if (Object.prototype.hasOwnProperty.call(extra, key)) headers[key] = extra[key];
-    }
-
-    return headers;
-  }
-
-  function fetchWithTimeout(url, options) {
-    var controller = new AbortController();
-    var timer = window.setTimeout(function () {
-      controller.abort();
-    }, REQUEST_TIMEOUT_MS);
-
-    return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
-      .then(function (response) {
-        window.clearTimeout(timer);
-        return response;
-      })
-      .catch(function (error) {
-        window.clearTimeout(timer);
-        throw error;
-      });
-  }
-
-  function fetchJsonWithRetry(url, options, attempt) {
-    return fetchWithTimeout(url, options)
-      .then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        return response.json();
-      })
-      .catch(function (error) {
-        if ((attempt || 0) < 1) {
-          debugLog("Supabase promotions: retry", error && error.message ? error.message : String(error));
-          return fetchJsonWithRetry(url, options, (attempt || 0) + 1);
-        }
-        throw error;
-      });
-  }
-
-  function fetchCountWithRetry(url, attempt) {
-    return fetchWithTimeout(url, {
-      method: "GET",
-      headers: supabaseHeaders({
-        Prefer: "count=exact"
-      })
-    })
-      .then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
-
-        var range = response.headers.get("content-range") || "";
-        var match = range.match(/\/(\d+)$/);
-        if (match) return Number(match[1]);
-
-        return response.json().then(function (rows) {
-          return Array.isArray(rows) ? rows.length : 0;
-        });
-      })
-      .catch(function (error) {
-        if ((attempt || 0) < 1) {
-          debugLog("Supabase promotions count: retry", error && error.message ? error.message : String(error));
-          return fetchCountWithRetry(url, (attempt || 0) + 1);
-        }
-        throw error;
-      });
-  }
-
-  function getPromotionsUrl() {
-    return buildSupabaseUrl("/rest/v1/posted_promotions", {
-      select: "id,published_at,expires_at,product_title,price_text,old_price_text,store,image_public_url,image_url,content_hash",
-      "metadata->>operation_slug": "eq." + MAIN_OPERATION_SLUG,
-      or: "(expires_at.is.null,expires_at.gt.now())",
-      order: "published_at.desc",
-      limit: String(PROMOTIONS_QUERY_LIMIT)
-    });
-  }
-
-  function getStartOfTodayIso() {
-    var formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: BR_TIMEZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23"
-    });
-    var currentParts = {};
-    formatter.formatToParts(new Date()).forEach(function (part) {
-      if (part.type !== "literal") currentParts[part.type] = Number(part.value);
-    });
-    var target = Date.UTC(currentParts.year, currentParts.month - 1, currentParts.day, 0, 0, 0);
-    var guess = target;
-    for (var attempt = 0; attempt < 3; attempt += 1) {
-      var zonedParts = {};
-      formatter.formatToParts(new Date(guess)).forEach(function (part) {
-        if (part.type !== "literal") zonedParts[part.type] = Number(part.value);
-      });
-      var represented = Date.UTC(
-        zonedParts.year,
-        zonedParts.month - 1,
-        zonedParts.day,
-        zonedParts.hour,
-        zonedParts.minute,
-        zonedParts.second
-      );
-      guess += target - represented;
-    }
-    return new Date(guess).toISOString();
-  }
-
-  function getTodayCountUrl() {
-
-    return buildSupabaseUrl("/rest/v1/posted_promotions", {
-      select: "id",
-      "metadata->>operation_slug": "eq." + MAIN_OPERATION_SLUG,
-      published_at: "gte." + getStartOfTodayIso(),
-      limit: "1"
-    });
-  }
-
-  function getAudienceStatsUrl() {
-    return buildSupabaseUrl("/rest/v1/audience_stats", {
-      select: "total_members,whatsapp_members,telegram_members,status,updated_at",
-      id: "eq.community",
-      limit: "1"
-    });
-  }
-
-  function getClickStatsUrl() {
-    return buildSupabaseUrl("/rest/v1/rpc/short_link_click_stats", {});
-  }
-
-  function fetchClickStats() {
-    return fetchJsonWithRetry(getClickStatsUrl(), {
-      method: "POST",
-      headers: supabaseHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ p_hours: 24 })
-    })
-      .then(function (rows) {
-        return Array.isArray(rows) && rows.length ? rows[0] : null;
-      })
-      .catch(function (error) {
-        debugLog("Supabase clicks: contador indisponivel", error && error.message ? error.message : String(error));
-        return null;
-      });
-  }
-
-  function formatAudienceNumber(value) {
+  function formatNumber(value) {
     var count = Number(value);
     if (!Number.isFinite(count) || count < 0) return "0";
     try {
@@ -206,50 +27,6 @@
     } catch (error) {
       return String(Math.trunc(count));
     }
-  }
-
-  function renderAudienceStats(section, audience) {
-    var membersTarget = section.querySelector("[data-activity-members]");
-    var totalMembers = Number(audience && audience.total_members);
-    var whatsappMembers = Number(audience && audience.whatsapp_members);
-    var telegramMembers = Number(audience && audience.telegram_members);
-    var updatedAt = audience && audience.updated_at ? new Date(audience.updated_at) : null;
-
-    if (!membersTarget) return;
-    if (!Number.isFinite(totalMembers) || totalMembers <= 0) totalMembers = FALLBACK_MEMBER_COUNT;
-
-    membersTarget.textContent = "\uD83D\uDC65 " + formatAudienceNumber(totalMembers) + " pessoas acompanhando as ofertas";
-    if (Number.isFinite(whatsappMembers) && Number.isFinite(telegramMembers)) {
-      membersTarget.title = "WhatsApp: " + formatAudienceNumber(whatsappMembers) +
-        " | Telegram: " + formatAudienceNumber(telegramMembers) +
-        (updatedAt && !Number.isNaN(updatedAt.getTime())
-          ? " | Atualizado em " + updatedAt.toLocaleString("pt-BR", { timeZone: BR_TIMEZONE })
-          : "");
-    }
-  }
-
-  function refreshAudienceStats(section) {
-    return fetchJsonWithRetry(getAudienceStatsUrl(), {
-      method: "GET",
-      headers: supabaseHeaders()
-    })
-      .then(function (rows) {
-        var audience = Array.isArray(rows) && rows.length ? rows[0] : null;
-        renderAudienceStats(section, audience);
-        if (audience) debugLog("Supabase audience: contador atualizado", audience);
-      })
-      .catch(function (error) {
-        debugLog("Supabase audience: mantendo valor de seguranca", error && error.message ? error.message : String(error));
-        renderAudienceStats(section, null);
-      });
-  }
-
-  function startAudienceUpdates(section) {
-    renderAudienceStats(section, null);
-    refreshAudienceStats(section);
-    window.setInterval(function () {
-      refreshAudienceStats(section);
-    }, AUDIENCE_REFRESH_INTERVAL_MS);
   }
 
   function getBRDateKey(date) {
@@ -260,44 +37,28 @@
         month: "2-digit",
         day: "2-digit"
       }).formatToParts(date);
-      var map = {};
-
-      parts.forEach(function (part) {
-        map[part.type] = part.value;
-      });
-
-      return [map.year, map.month, map.day].join("-");
-    } catch (e) {
+      var values = {};
+      parts.forEach(function (part) { values[part.type] = part.value; });
+      return [values.year, values.month, values.day].join("-");
+    } catch (error) {
       return date.toISOString().slice(0, 10);
     }
   }
 
-  function formatRelativeTimeBR(value) {
+  function formatRelativeTime(value) {
     var published = new Date(value);
-    var diffMs = Date.now() - published.getTime();
-    var diffMinutes;
-    var diffHours;
-    var today;
-    var yesterday;
-
-    if (!value || Number.isNaN(published.getTime())) return "recente";
-    if (diffMs < 60 * 1000) return "agora mesmo";
-
-    diffMinutes = Math.floor(diffMs / (60 * 1000));
-    if (diffMinutes === 1) return "h\u00e1 1 min";
-    if (diffMinutes < 60) return "h\u00e1 " + diffMinutes + " min";
-
-    diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours === 1) return "h\u00e1 1 hora";
-    if (diffHours < 24) return "h\u00e1 " + diffHours + " horas";
-
-    today = getBRDateKey(new Date());
-    yesterday = getBRDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
-
+    var difference = Date.now() - published.getTime();
+    if (!value || Number.isNaN(published.getTime())) return "recentemente";
+    if (difference < 60000) return "agora";
+    var minutes = Math.floor(difference / 60000);
+    if (minutes < 60) return "há " + minutes + " min";
+    var hours = Math.floor(minutes / 60);
+    if (hours < 24) return "há " + hours + (hours === 1 ? " hora" : " horas");
+    var today = getBRDateKey(new Date());
+    var yesterday = getBRDateKey(new Date(Date.now() - 86400000));
     if (getBRDateKey(published) === today) return "hoje";
     if (getBRDateKey(published) === yesterday) return "ontem";
-
-    return "h\u00e1 " + Math.max(1, Math.floor(diffHours / 24)) + " dias";
+    return "há " + Math.max(1, Math.floor(hours / 24)) + " dias";
   }
 
   function createElement(tagName, className, text) {
@@ -307,190 +68,104 @@
     return element;
   }
 
-  function getPromotionImage(promotion) {
-    return promotion.image_public_url || promotion.image_url || FALLBACK_IMAGE;
-  }
-
-  function promotionIdentity(promotion) {
-    if (promotion && promotion.content_hash) return "hash:" + String(promotion.content_hash);
-    return [promotion && promotion.store, promotion && promotion.product_title, promotion && promotion.price_text]
-      .map(function (value) {
-        return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
-      })
-      .join("|");
-  }
-
-  function deduplicatePromotions(promotions) {
-    var seen = {};
-    var unique = [];
-    (Array.isArray(promotions) ? promotions : []).forEach(function (promotion) {
-      var identity = promotionIdentity(promotion);
-      if (!identity || seen[identity]) return;
-      seen[identity] = true;
-      unique.push(promotion);
-    });
-    return unique.slice(0, PROMOTIONS_LIMIT);
-  }
-
   function createPromotionCard(promotion, index) {
     var card = createElement("article", "promotion-card");
     var media = createElement("div", "promotion-media");
     var image = document.createElement("img");
     var body = createElement("div", "promotion-body");
-    var title = createElement("h3", "promotion-title", promotion.product_title || "Promo\u00e7\u00e3o publicada no grupo");
-    var priceRow = createElement("div", "promotion-price-row");
-    var time = createElement("div", "promotion-time", "Publicado " + formatRelativeTimeBR(promotion.published_at));
-    var cta = createElement("a", "promotion-cta", "Entrar no grupo para ver o link");
+    var title = createElement("h3", "promotion-title", promotion.product_title || "Publicação recente");
+    var time = createElement("div", "promotion-time", "Publicado " + formatRelativeTime(promotion.published_at));
+    var cta = createElement("a", "promotion-cta", "Receber novas publicações");
 
-    image.src = getPromotionImage(promotion);
-    image.alt = "Promo\u00e7\u00e3o: " + (promotion.product_title || "produto publicado no grupo");
+    image.src = promotion.image_public_url || FALLBACK_IMAGE;
+    image.alt = "Produto divulgado pela Free Island: " + (promotion.product_title || "tecnologia");
     image.loading = "lazy";
     image.decoding = "async";
     image.onerror = function () {
-      if (image.src.indexOf(FALLBACK_IMAGE) === -1) image.src = FALLBACK_IMAGE;
+      if (image.getAttribute("src") !== FALLBACK_IMAGE) image.src = FALLBACK_IMAGE;
     };
-
     media.appendChild(image);
 
-    if (promotion.store) {
-      body.appendChild(createElement("span", "promotion-store", promotion.store));
-    }
-
+    if (promotion.store) body.appendChild(createElement("span", "promotion-store", promotion.store));
     body.appendChild(title);
-
-    if (promotion.old_price_text || promotion.price_text) {
-      if (promotion.old_price_text) {
-        priceRow.appendChild(createElement("span", "promotion-old-price", promotion.old_price_text));
-      }
-      if (promotion.price_text) {
-        priceRow.appendChild(createElement("strong", "promotion-price", promotion.price_text));
-      }
-      body.appendChild(priceRow);
-    }
-
     body.appendChild(time);
+    body.appendChild(createElement("p", "promotion-disclaimer", "A publicação completa e as condições vigentes ficam na comunidade."));
 
     cta.href = "#";
     cta.setAttribute("data-whatsapp-link", "");
     cta.setAttribute("data-meta-event", "whatsapp");
     cta.setAttribute("data-section", "latest_promotions");
     cta.setAttribute("data-track", "cta_latest_promotion");
-    cta.setAttribute("aria-label", "Entrar no grupo para ver o link da promo\u00e7\u00e3o " + (index + 1));
+    cta.setAttribute("aria-label", "Receber publicações da Free Island no WhatsApp, item " + (index + 1));
     body.appendChild(cta);
-
     card.appendChild(media);
     card.appendChild(body);
-
     return card;
   }
 
-  function updateActivityBar(section, promotions, count24h, clickStats) {
-    var countTarget = section.querySelector("[data-activity-count]");
-    var latestTarget = section.querySelector("[data-activity-latest]");
-    var clicksTarget = section.querySelector("[data-activity-clicks]");
-    var latestText = promotions.length ? formatRelativeTimeBR(promotions[0].published_at) : "";
-    var totalClicks = Number(clickStats && clickStats.total_clicks);
-
-    if (countTarget) {
-      countTarget.textContent = "\uD83D\uDFE2 " + count24h + " promo\u00e7\u00f5es publicadas hoje";
-    }
-
-    if (latestTarget) {
-      if (latestText) {
-        latestTarget.textContent = "\u26A1 \u00daltima promo\u00e7\u00e3o " + latestText;
-        latestTarget.hidden = false;
-      } else {
-        latestTarget.hidden = true;
-      }
-    }
-
-    if (clicksTarget) {
-      if (Number.isFinite(totalClicks)) {
-        clicksTarget.textContent = "\uD83D\uDD17 " + formatAudienceNumber(totalClicks) + " cliques em ofertas nas ultimas 24h";
-        clicksTarget.hidden = false;
-        if (clickStats && clickStats.by_network) {
-          clicksTarget.title = Object.keys(clickStats.by_network)
-            .sort()
-            .map(function (network) {
-              return network + ": " + formatAudienceNumber(clickStats.by_network[network]);
-            })
-            .join(" | ");
-        }
-      } else {
-        clicksTarget.hidden = true;
-      }
-    }
-
-    debugLog("Supabase promotions: " + count24h + " promo\u00e7\u00f5es publicadas hoje");
-    if (latestText) debugLog("Supabase promotions: \u00faltima promo\u00e7\u00e3o " + latestText);
+  function renderAudience(section, audience) {
+    var target = section.querySelector("[data-activity-members]");
+    var total = Number(audience && audience.total_members);
+    if (!target) return;
+    if (!Number.isFinite(total) || total <= 0) total = FALLBACK_MEMBER_COUNT;
+    target.textContent = "👥 " + formatNumber(total) + " pessoas na comunidade";
   }
 
-  function renderPromotions(section, promotions, count24h, clickStats) {
+  function renderSnapshot(section, snapshot) {
     var list = section.querySelector("[data-promotions-list]");
+    var fallback = section.querySelector("[data-promotions-fallback]");
+    var countTarget = section.querySelector("[data-activity-count]");
+    var latestTarget = section.querySelector("[data-activity-latest]");
+    var promotions = Array.isArray(snapshot.promotions) ? snapshot.promotions.slice(0, PROMOTIONS_LIMIT) : [];
     if (!list) return;
 
+    renderAudience(section, snapshot.audience || {});
+    if (countTarget) countTarget.textContent = "🟢 " + Number(snapshot.today_count || 0) + " publicações hoje";
+    if (latestTarget) {
+      latestTarget.hidden = !promotions.length;
+      if (promotions.length) latestTarget.textContent = "⚡ Última publicação " + formatRelativeTime(promotions[0].published_at);
+    }
+
     if (!promotions.length) {
-      section.hidden = true;
+      list.hidden = true;
+      if (fallback) fallback.hidden = false;
       return;
     }
 
     list.textContent = "";
+    list.hidden = false;
+    if (fallback) fallback.hidden = true;
     promotions.forEach(function (promotion, index) {
       list.appendChild(createPromotionCard(promotion, index));
     });
-
-    updateActivityBar(section, promotions, count24h, clickStats);
-
     if (typeof window.FreeIslandApplyWhatsAppLinks === "function") {
       window.FreeIslandApplyWhatsAppLinks(section);
     }
   }
 
-  function hideSection(section) {
-    section.hidden = true;
+  function showStaticFallback(section, error) {
+    var list = section.querySelector("[data-promotions-list]");
+    var fallback = section.querySelector("[data-promotions-fallback]");
+    if (list) list.hidden = true;
+    if (fallback) fallback.hidden = false;
+    debugLog("API pública indisponível; mantendo conteúdo estático", error && error.message);
   }
 
-  function initPromotions() {
+  function init() {
     var section = document.querySelector("[data-promotions-section]");
-    var promotionsUrl;
-    var countUrl;
-
-    if (!section || typeof fetch !== "function") return;
-
-    startAudienceUpdates(section);
-
-    promotionsUrl = getPromotionsUrl();
-    countUrl = getTodayCountUrl();
-
-    debugLog("Supabase promotions: request iniciado", {
-      promotions_url: promotionsUrl,
-      count_url: countUrl
+    if (!section) return;
+    if (!window.FreeIslandPublicData || typeof window.FreeIslandPublicData.get !== "function") {
+      showStaticFallback(section, new Error("public_data_client_unavailable"));
+      return;
+    }
+    window.FreeIslandPublicData.get(false).then(function (snapshot) {
+      renderSnapshot(section, snapshot);
+      debugLog("Snapshot público carregado", snapshot);
+    }).catch(function (error) {
+      showStaticFallback(section, error);
     });
-
-    Promise.all([
-      fetchJsonWithRetry(promotionsUrl, {
-        method: "GET",
-        headers: supabaseHeaders()
-      }),
-      fetchCountWithRetry(countUrl),
-      fetchClickStats()
-    ])
-      .then(function (results) {
-        var promotions = deduplicatePromotions(results[0]);
-        var count24h = Number.isFinite(results[1]) ? results[1] : 0;
-
-        debugLog("Supabase promotions: " + promotions.length + " promo\u00e7\u00f5es carregadas", promotions);
-        renderPromotions(section, promotions, count24h, results[2]);
-      })
-      .catch(function (error) {
-        debugLog("Supabase promotions: erro", error && error.message ? error.message : String(error));
-        hideSection(section);
-      });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initPromotions);
-  } else {
-    initPromotions();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();

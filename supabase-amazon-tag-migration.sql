@@ -33,7 +33,7 @@ begin
 
   return normalized_value
     || case when strpos(normalized_value, '?') > 0 then '&' else '?' end
-    || 'tag=freeisland0de-20'
+    || 'tag=freeislandt0b-20'
     || fragment_value;
 end;
 $$;
@@ -45,10 +45,10 @@ immutable
 set search_path = public
 as $$
   select
-    value ~* '[?&]tag=freeisland0de-20(&|#|$)'
+    value ~* '[?&]tag=freeislandt0b-20(&|#|$)'
     and regexp_replace(
       value,
-      '([?&])tag=freeisland0de-20(&|#|$)',
+      '([?&])tag=freeislandt0b-20(&|#|$)',
       '\1\2',
       'i'
     ) !~* '[?&]tag=';
@@ -143,7 +143,7 @@ select
   count(*) filter (
     where active
       and target_url ~* '[?&]tag='
-      and target_url !~* '[?&]tag=freeisland0de-20(&|#|$)'
+      and target_url !~* '[?&]tag=freeislandt0b-20(&|#|$)'
   ) as amazon_links_com_tag_antiga,
   count(*) filter (
     where active

@@ -12,10 +12,10 @@ immutable
 set search_path = public
 as $$
   select
-    value ~* '[?&]tag=freeisland0de-20(&|#|$)'
+    value ~* '[?&]tag=freeislandt0b-20(&|#|$)'
     and regexp_replace(
       value,
-      '([?&])tag=freeisland0de-20(&|#|$)',
+      '([?&])tag=freeislandt0b-20(&|#|$)',
       '\1\2',
       'i'
     ) !~* '[?&]tag=';

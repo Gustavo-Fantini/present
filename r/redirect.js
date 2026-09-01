@@ -4,7 +4,7 @@
   var REDIRECT_DELAY_MS = 300;
   var REQUEST_TIMEOUT_MS = 5000;
   var FALLBACK_HOME = "/";
-  var AMAZON_TAG = "freeisland0de-20";
+  var AMAZON_TAG = "freeislandt0b-20";
   var NETWORKS = ["meli", "amzn", "shopee", "ali", "kabum", "adidas", "terabyte", "netshoes"];
   var AWIN_PUBLISHER_ID = "2802012";
   var AWIN_ADVERTISERS = {

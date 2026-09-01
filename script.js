@@ -1,9 +1,6 @@
 const WHATSAPP_FALLBACK_URL = "https://chat.whatsapp.com/JelwkQXy1Mj05NWybBCTQX";
-const FREE_ISLAND_SUPABASE_URL = "https://jdeszhiykkviymtkdbit.supabase.co";
-const FREE_ISLAND_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZXN6aGl5a2t2aXltdGtkYml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU4ODUsImV4cCI6MjA5NTAzMTg4NX0.lH674hCA5Bp62m08eV03DqmZauMY_VNlkhGi6vlX33U";
 const FREE_ISLAND_OPERATION_SLUG = "free-island-principal";
 const WHATSAPP_ROUTE_CACHE_MS = 30000;
-const WHATSAPP_ROUTE_TIMEOUT_MS = 4500;
 
 const yearTargets = document.querySelectorAll("[data-current-year]");
 const placeholderUrl = "https://chat.whatsapp.com/SEU-LINK-AQUI";
@@ -11,12 +8,6 @@ let activeWhatsAppGroupUrl = WHATSAPP_FALLBACK_URL;
 let routeResolvedAt = 0;
 let routeRequest = null;
 let routeSnapshotLoaded = false;
-
-window.FreeIslandPublicConfig = {
-  supabaseUrl: FREE_ISLAND_SUPABASE_URL,
-  supabaseAnonKey: FREE_ISLAND_SUPABASE_ANON_KEY,
-  operationSlug: FREE_ISLAND_OPERATION_SLUG
-};
 
 function normalizeWhatsAppGroupUrl(value) {
   try {
@@ -52,30 +43,12 @@ function selectAvailableWhatsAppGroup(groups) {
 }
 
 function fetchWhatsAppGroupRoute() {
-  var params = new URLSearchParams({
-    select: "whatsapp_groups,status,updated_at",
-    id: "eq.community",
-    limit: "1"
-  });
-  var controller = new AbortController();
-  var timer = window.setTimeout(function () { controller.abort(); }, WHATSAPP_ROUTE_TIMEOUT_MS);
-  return fetch(FREE_ISLAND_SUPABASE_URL + "/rest/v1/audience_stats?" + params.toString(), {
-    method: "GET",
-    cache: "no-store",
-    signal: controller.signal,
-    headers: {
-      apikey: FREE_ISLAND_SUPABASE_ANON_KEY,
-      Authorization: "Bearer " + FREE_ISLAND_SUPABASE_ANON_KEY,
-      "Cache-Control": "no-cache"
-    }
-  }).then(function (response) {
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    return response.json();
-  }).then(function (rows) {
-    if (!Array.isArray(rows) || !rows.length) throw new Error("audience_snapshot_unavailable");
-    return selectAvailableWhatsAppGroup(rows[0].whatsapp_groups);
-  }).finally(function () {
-    window.clearTimeout(timer);
+  if (!window.FreeIslandPublicData || typeof window.FreeIslandPublicData.get !== "function") {
+    return Promise.reject(new Error("public_data_client_unavailable"));
+  }
+  return window.FreeIslandPublicData.get(true).then(function (snapshot) {
+    var audience = snapshot && snapshot.audience;
+    return selectAvailableWhatsAppGroup(audience && audience.whatsapp_groups);
   });
 }
 

@@ -3,323 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Island | Promocoes reais no WhatsApp</title>
-  <meta name="description" content="Entre no grupo oficial da Free Island e receba promocoes reais, cupons validados e oportunidades direto no WhatsApp.">
+  <title>Free Island | Guias e curadoria de tecnologia</title>
+  <meta name="description" content="Guias originais, critérios de compra e curadoria independente de tecnologia da Free Island, com uma comunidade gratuita no WhatsApp e Telegram.">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="theme-color" content="#060d19">
-  <meta property="og:title" content="Free Island | Promocoes reais no WhatsApp">
-  <meta property="og:description" content="Promocoes reais, cupons validados e oportunidades direto no seu WhatsApp.">
+  <meta property="og:title" content="Free Island | Tecnologia escolhida com critério">
+  <meta property="og:description" content="Guias originais para comparar hardware, periféricos e compras online antes de decidir.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="assets/logo_sem_fundo.png">
+  <meta property="og:url" content="https://freeisland.onrender.com/">
+  <meta property="og:image" content="https://freeisland.onrender.com/assets/logo_sem_fundo.png">
+  <link rel="canonical" href="https://freeisland.onrender.com/">
   <link rel="icon" href="assets/logo_sem_fundo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <!-- Meta Pixel Code -->
-  <script>
-    (function () {
-      var pixelId = "1479287410507022";
-      var debug = false;
-
-      try {
-        debug = new URLSearchParams(window.location.search).get("debugMeta") === "true";
-      } catch (e) {}
-
-      function metaDebug(message, data) {
-        if (!debug || !window.console) return;
-        if (typeof data === "undefined") {
-          console.log("[Free Island Meta]", message);
-        } else {
-          console.log("[Free Island Meta]", message, data);
-        }
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://freeisland.onrender.com/#organization",
+        "name": "Free Island",
+        "url": "https://freeisland.onrender.com/",
+        "logo": "https://freeisland.onrender.com/assets/logo_sem_fundo.png",
+        "founder": {"@type": "Person", "name": "Gustavo Fantini"}
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://freeisland.onrender.com/#website",
+        "url": "https://freeisland.onrender.com/",
+        "name": "Free Island",
+        "inLanguage": "pt-BR",
+        "publisher": {"@id": "https://freeisland.onrender.com/#organization"}
       }
-
-      window.__FI_META_PIXEL_ID = pixelId;
-      window.__FI_META_DEBUG = debug;
-      window.__FI_META_INIT_SENT = false;
-      window.__FI_META_PAGEVIEW_SENT = false;
-      window.__FI_META_LIBRARY_LOADED = false;
-      window.__FI_META_LIBRARY_ERROR = false;
-
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;
-      t.onload=function(){f.__FI_META_LIBRARY_LOADED=true;metaDebug("Pixel carregado");};
-      t.onerror=function(){f.__FI_META_LIBRARY_ERROR=true;metaDebug("Meta Pixel nao carregado");};
-      s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-
-      if (typeof fbq === "function") {
-        fbq("init", pixelId);
-        window.__FI_META_INIT_SENT = true;
-        metaDebug("fbq encontrado");
-
-        fbq("track", "PageView");
-        window.__FI_META_PAGEVIEW_SENT = true;
-        metaDebug("PageView enviado");
-      } else {
-        metaDebug("Meta Pixel nao carregado");
-      }
-    })();
+    ]
+  }
   </script>
-  <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1479287410507022&ev=PageView&noscript=1"
-  /></noscript>
-  <!-- End Meta Pixel Code -->
 </head>
 <body data-page="landing">
   <div class="page-shell">
-    <div class="top-alert">
-      <span class="top-alert-dot"></span>
-      Grupo gratuito de promocoes tech com vagas abertas agora
-    </div>
+    <div class="top-alert"><span class="top-alert-dot"></span>Conteúdo público, gratuito e atualizado</div>
 
     <header class="hero-card" id="inicio">
       <div class="hero-top">
-        <a class="brand" data-track="nav_brand_top" href="#inicio" aria-label="Ir para o topo">
-          <span class="brand-mark">
-            <img src="assets/logo_sem_fundo.png" alt="Logo Free Island">
-          </span>
-          <span class="brand-copy">
-            <strong>Free Island</strong>
-            <span>grupo oficial de promocoes</span>
-          </span>
+        <a class="brand" data-track="nav_brand_top" href="#inicio" aria-label="Ir para o início">
+          <span class="brand-mark"><img src="assets/logo_sem_fundo.png" alt="Logo da Free Island"></span>
+          <span class="brand-copy"><strong>Free Island</strong><span>curadoria de tecnologia</span></span>
         </a>
-
-        <a class="mini-cta" data-track="cta_top_enter" data-meta-event="whatsapp" data-section="header" data-whatsapp-link href="#">
-          Entrar
-        </a>
+        <nav class="site-nav" aria-label="Navegação principal">
+          <a href="guias.html">Guias</a>
+          <a href="ofertas.html">Seleções</a>
+          <a href="sobre.html">Sobre</a>
+        </nav>
       </div>
 
-      <div class="hero-badge">Grupo gratuito de promocoes tech</div>
-
-      <div class="logo-orb">
-        <img src="fotologo.png" alt="Marca Free Island">
-      </div>
-
-      <p class="hero-kicker">Promo&ccedil;&otilde;es e cupons no celular</p>
-      <h1>Entre no grupo da Free Island</h1>
+      <div class="hero-badge">Decisão de compra sem pressa e sem promessa vazia</div>
+      <div class="logo-orb"><img src="fotologo.png" alt="Símbolo da Free Island"></div>
+      <p class="hero-kicker">Análise prática para comprar melhor</p>
+      <h1>Tecnologia escolhida com critério, não só pelo desconto</h1>
       <p class="hero-copy">
-        Descontos de <strong>mais de R$20.000</strong> por semana em tecnologia, setup, eletronicos e perifericos.
+        Publicamos guias próprios sobre hardware, periféricos e segurança em marketplaces. A comunidade recebe oportunidades; o site explica <strong>como avaliá-las</strong>.
       </p>
 
       <div class="cta-stack">
-        <a class="button button-whatsapp" data-track="cta_hero_enter" data-meta-event="whatsapp" data-section="hero" data-whatsapp-link href="#">
-          Entrar no grupo gr&aacute;tis do WhatsApp
-        </a>
-        <a class="button button-telegram" data-track="cta_hero_telegram" data-meta-event="telegram" data-section="hero" href="https://t.me/freeislandpromos" target="_blank" rel="noopener noreferrer">
-          <span class="button-new">NOVO</span>
-          <span class="button-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M21.6 4.3 2.9 11.5c-.9.3-.9 1.6 0 1.9l4.5 1.5 1.8 5.7c.2.7 1.1.9 1.6.4l2.6-2.7 5.1 3.7c.6.4 1.4.1 1.6-.6l3.3-15.1c.2-.9-.6-1.6-1.8-1.1Z" fill="currentColor"/>
-              <path d="M8.2 14.5 18.9 7.7c.3-.2.7.2.4.5l-8.6 8.2c-.3.3-.5.6-.6 1l-.5 3.1" stroke="rgba(255,255,255,0.65)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          Entrar no Telegram
-        </a>
+        <a class="button button-whatsapp" data-track="cta_hero_enter" data-meta-event="whatsapp" data-section="hero" data-whatsapp-link href="#">Entrar na comunidade do WhatsApp</a>
+        <a class="button button-secondary" data-track="nav_guides_hero" data-meta-event="guides" data-section="hero" href="guias.html">Ler os guias de compra</a>
       </div>
-
-      <a class="micro-link" data-track="nav_ofertas" data-meta-event="offers" data-section="hero" href="ofertas.html">Ver ofertas</a>
+      <div class="hero-pills" aria-label="Compromissos editoriais">
+        <span class="hero-pill">Conteúdo original</span>
+        <span class="hero-pill">Autoria identificada</span>
+        <span class="hero-pill">Publicidade sinalizada</span>
+      </div>
     </header>
 
     <main class="main-stack">
-      <section
-        class="latest-promotions-section"
-        id="latest-promotions"
-        aria-labelledby="latest-promotions-title"
-        data-promotions-section
-      >
+      <section class="latest-promotions-section" id="publicacoes-recentes" aria-labelledby="latest-promotions-title" data-promotions-section>
         <div class="latest-promotions-head">
           <div>
-            <div class="section-label">Grupo ativo agora</div>
-            <h2 id="latest-promotions-title">&#128293; &Uacute;ltimas promo&ccedil;&otilde;es publicadas</h2>
-            <p>As ofertas abaixo foram publicadas recentemente no grupo oficial.</p>
+            <div class="section-label">Atividade da comunidade</div>
+            <h2 id="latest-promotions-title">Publicações recentes</h2>
+            <p>Itens enviados pela operação principal. O painel não reproduz preço, estoque ou cupom temporário.</p>
           </div>
         </div>
-
         <div class="activity-bar" data-promotions-activity aria-live="polite">
-          <span class="activity-pill" data-activity-count>Carregando promo&ccedil;&otilde;es...</span>
-          <span class="activity-pill" data-activity-latest>Atualizando grupo...</span>
-          <span class="activity-pill" data-activity-clicks hidden></span>
-          <span class="activity-pill" data-activity-members>620 pessoas acompanhando as ofertas</span>
+          <span class="activity-pill" data-activity-count>Atualizando publicações...</span>
+          <span class="activity-pill" data-activity-latest hidden></span>
+          <span class="activity-pill" data-activity-members>620 pessoas na comunidade</span>
         </div>
-
-        <div class="latest-promotions-grid" data-promotions-list aria-live="polite">
-          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
-          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
-          <article class="promotion-card promotion-card-skeleton" aria-hidden="true"></article>
+        <div class="latest-promotions-grid" data-promotions-list aria-live="polite" hidden></div>
+        <div class="static-fallback" data-promotions-fallback>
+          <p><strong>O painel ao vivo não é necessário para usar o site.</strong> Enquanto ele atualiza, os guias abaixo permanecem disponíveis integralmente.</p>
+          <div class="compact-link-grid">
+            <a href="guias/como-identificar-preco-real.html">Como avaliar um preço de referência</a>
+            <a href="guias/vendedor-garantia-marketplace.html">Como conferir vendedor e garantia</a>
+            <a href="guias/checklist-compra-online.html">Checklist antes de finalizar a compra</a>
+          </div>
         </div>
-
-        <p class="latest-promotions-note">Os links completos s&atilde;o enviados primeiro no grupo.</p>
+        <noscript><p class="latest-promotions-note">O painel ao vivo usa JavaScript. Todo o conteúdo editorial continua acessível na página de guias.</p></noscript>
       </section>
 
-      <section class="info-card" id="sobre">
-        <div class="section-label">Rapido e direto</div>
-        <ul class="trust-list">
-          <li>Cupons e ofertas verificadas</li>
-          <li>Links seguros antes de publicar</li>
-          <li>Sem spam e sem flood aleatorio</li>
-          <li>Ofertas de tecnologia, setup, eletronicos e perifericos</li>
-        </ul>
-
-        <div class="small-actions">
-          <a class="small-link small-link-strong" data-track="cta_admin_enter" data-meta-event="whatsapp" data-section="info" data-whatsapp-link href="#">
-            Entrar no grupo gr&aacute;tis do WhatsApp
-          </a>
-          <a class="small-link" data-track="cta_footer_amazon" data-meta-event="offers" data-section="info" href="ofertas.html">
-            Ver ofertas
-          </a>
-          <a class="small-link" data-track="nav_guides_info" data-meta-event="guides" data-section="info" href="guias.html">
-            Ler guias de compra
-          </a>
+      <section class="info-card" id="guias-recentes" aria-labelledby="guides-home-title">
+        <div class="section-label">Conteúdo editorial</div>
+        <h2 id="guides-home-title">Guias publicados recentemente</h2>
+        <p class="guide-intro">Cada publicação tem URL própria, autoria, data e critérios que continuam úteis sem qualquer link de afiliado.</p>
+        <div class="editorial-grid">
+          <article class="editorial-card"><span>Hardware</span><h3><a href="guias/escolher-processador.html">Como escolher um processador pelo uso real</a></h3><p>Compatibilidade, plataforma, vídeo integrado e custo total antes do número de núcleos.</p><time datetime="2026-08-31">31 de agosto de 2026</time></article>
+          <article class="editorial-card"><span>Armazenamento</span><h3><a href="guias/comparar-ssd.html">Como comparar SSD SATA e NVMe</a></h3><p>Interface, capacidade, memória, garantia e desempenho sustentado explicados sem jargão.</p><time datetime="2026-08-31">31 de agosto de 2026</time></article>
+          <article class="editorial-card"><span>Imagem</span><h3><a href="guias/escolher-monitor.html">Como escolher um monitor além dos hertz</a></h3><p>Painel, resolução, conexões, ergonomia e resposta real entram na decisão.</p><time datetime="2026-08-31">31 de agosto de 2026</time></article>
+          <article class="editorial-card"><span>Segurança</span><h3><a href="guias/vendedor-garantia-marketplace.html">Vendedor, entrega e garantia em marketplaces</a></h3><p>Uma rotina curta para reduzir riscos antes de confirmar o pedido.</p><time datetime="2026-08-31">31 de agosto de 2026</time></article>
         </div>
+        <a class="micro-link" data-track="nav_guides_home" data-meta-event="guides" data-section="guides_home" href="guias.html">Ver as 10 publicações</a>
+      </section>
+
+      <section class="info-card" id="metodologia">
+        <div class="section-label">Método Free Island</div>
+        <h2>O que conferimos antes de recomendar</h2>
+        <ol class="method-list">
+          <li><strong>Produto exato:</strong> modelo, variante, capacidade e compatibilidade.</li>
+          <li><strong>Condição real:</strong> vendedor, entrega, frete, garantia e forma de pagamento.</li>
+          <li><strong>Comunicação clara:</strong> condições relevantes e publicidade identificadas sem criar urgência artificial.</li>
+          <li><strong>Revisão contínua:</strong> referências temporárias deixam de ser exibidas quando perdem validade.</li>
+        </ol>
+        <a class="micro-link" href="politica-editorial.html">Conhecer a política editorial completa</a>
       </section>
 
       <section class="info-card affiliate-transparency" id="amazon-associados" aria-labelledby="amazon-associados-title">
-        <div class="section-label">Transparencia de afiliados</div>
-        <h2 id="amazon-associados-title">Curadoria Amazon</h2>
-        <p class="affiliate-disclosure">
-          Como associado da Amazon, eu ganho com compras qualificadas.
-        </p>
-        <p class="affiliate-copy">
-          Os links abaixo sao publicidade, abrem diretamente na Amazon.com.br e incluem o ID de rastreamento da Free Island.
-        </p>
+        <div class="section-label">Transparência de afiliados</div>
+        <h2 id="amazon-associados-title">Seleções relacionadas aos nossos guias</h2>
+        <p class="affiliate-disclosure">Como participante do Programa de Associados da Amazon, sou remunerado pelas compras qualificadas efetuadas.</p>
+        <p class="affiliate-copy">Não publicamos preços, estoque ou cupons da Amazon nesta página. Essas informações variam e devem ser conferidas na Amazon.com.br no momento do clique.</p>
         <div class="affiliate-quick-links" aria-label="Links patrocinados da Amazon">
-          <a
-            class="affiliate-direct-link"
-            data-track="cta_amazon_home_deals"
-            data-meta-event="offers"
-            data-section="amazon_transparency"
-            href="https://www.amazon.com.br/deals?tag=freeisland0de-20&amp;linkCode=ll2"
-            target="_blank"
-            rel="sponsored noopener"
-            referrerpolicy="strict-origin-when-cross-origin"
-          ><span>Publicidade</span> Ofertas do dia</a>
-          <a
-            class="affiliate-direct-link"
-            data-track="cta_amazon_home_computers"
-            data-meta-event="offers"
-            data-section="amazon_transparency"
-            href="https://www.amazon.com.br/Computadores-Informatica/b?ie=UTF8&amp;node=16339926011&amp;tag=freeisland0de-20&amp;linkCode=ll2"
-            target="_blank"
-            rel="sponsored noopener"
-            referrerpolicy="strict-origin-when-cross-origin"
-          ><span>Publicidade</span> Computadores e hardware</a>
-          <a
-            class="affiliate-direct-link"
-            data-track="cta_amazon_home_electronics"
-            data-meta-event="offers"
-            data-section="amazon_transparency"
-            href="https://www.amazon.com.br/Eletronicos-e-Tecnologia/b?ie=UTF8&amp;node=16209062011&amp;tag=freeisland0de-20&amp;linkCode=ll2"
-            target="_blank"
-            rel="sponsored noopener"
-            referrerpolicy="strict-origin-when-cross-origin"
-          ><span>Publicidade</span> Eletronicos</a>
+          <a class="affiliate-direct-link" data-track="cta_amazon_home_processors" data-meta-event="offers" data-section="amazon_transparency" href="https://www.amazon.com.br/s?k=processador+amd+intel&amp;tag=freeislandt0b-20&amp;linkCode=ll2" target="_blank" rel="sponsored noopener" referrerpolicy="strict-origin-when-cross-origin"><span>Publicidade · link patrocinado</span> Ver processadores na Amazon.com.br</a>
+          <a class="affiliate-direct-link" data-track="cta_amazon_home_storage" data-meta-event="offers" data-section="amazon_transparency" href="https://www.amazon.com.br/s?k=ssd+nvme&amp;tag=freeislandt0b-20&amp;linkCode=ll2" target="_blank" rel="sponsored noopener" referrerpolicy="strict-origin-when-cross-origin"><span>Publicidade · link patrocinado</span> Ver SSDs na Amazon.com.br</a>
+          <a class="affiliate-direct-link" data-track="cta_amazon_home_monitors" data-meta-event="offers" data-section="amazon_transparency" href="https://www.amazon.com.br/s?k=monitor+para+computador&amp;tag=freeislandt0b-20&amp;linkCode=ll2" target="_blank" rel="sponsored noopener" referrerpolicy="strict-origin-when-cross-origin"><span>Publicidade · link patrocinado</span> Ver monitores na Amazon.com.br</a>
         </div>
-        <a class="micro-link" data-track="nav_ofertas_amazon" data-meta-event="offers" data-section="amazon_transparency" href="ofertas.html">
-          Ver toda a curadoria
-        </a>
+        <p class="affiliate-updated">Página e links revisados em <time datetime="2026-08-31">31 de agosto de 2026</time>.</p>
+        <a class="micro-link" data-track="nav_selections_amazon" data-meta-event="offers" data-section="amazon_transparency" href="ofertas.html">Ver todas as seleções editoriais</a>
       </section>
 
-      <section class="final-card" id="entrar">
-        <div class="section-label">Ultimo passo</div>
-        <h2>Quer receber as proximas ofertas no WhatsApp?</h2>
-        <p class="final-copy">
-          Se a vaga estiver aberta, o acesso e imediato.
-        </p>
-        <a class="button button-whatsapp button-wide" data-track="cta_banner_enter" data-meta-event="whatsapp" data-section="final" data-whatsapp-link href="#">
-          Entrar no grupo gr&aacute;tis do WhatsApp
-        </a>
+      <section class="info-card" id="sobre">
+        <div class="section-label">Quem publica</div>
+        <h2>Responsabilidade editorial identificada</h2>
+        <p class="guide-intro">A Free Island é editada por Gustavo Fantini. O conteúdo explica os critérios usados na curadoria e diferencia opinião editorial, informação comercial e publicidade.</p>
+        <div class="small-actions">
+          <a class="small-link" href="sobre.html">Sobre a Free Island</a>
+          <a class="small-link" href="contato.html">Contato</a>
+          <a class="small-link" href="privacidade.html">Privacidade e cookies</a>
+        </div>
+      </section>
+
+      <section class="final-card" id="comunidade">
+        <div class="section-label">Acompanhe as próximas publicações</div>
+        <h2>Prefere receber a curadoria no celular?</h2>
+        <p class="final-copy">A entrada é gratuita. Participar da comunidade não exige compra nem uso de link de afiliado.</p>
+        <a class="button button-whatsapp button-wide" data-track="cta_banner_enter" data-meta-event="whatsapp" data-section="final" data-whatsapp-link href="#">Entrar no WhatsApp</a>
+        <a class="micro-link" href="https://t.me/freeislandpromos" target="_blank" rel="noopener noreferrer">Acompanhar pelo Telegram</a>
       </section>
     </main>
 
     <footer class="site-footer">
-      <a class="footer-link footer-link-strong" data-track="cta_footer_whatsapp" data-meta-event="whatsapp" data-section="footer" data-whatsapp-link href="#">
-        Abrir grupo no WhatsApp
-      </a>
-      <a class="footer-link" data-track="cta_footer_amazon" data-meta-event="offers" data-section="footer" href="ofertas.html">
-        Ofertas
-      </a>
-      <a class="footer-link" data-track="nav_guides_footer" data-meta-event="guides" data-section="footer" href="guias.html">
-        Guias de compra
-      </a>
+      <nav class="footer-actions" aria-label="Links do rodapé">
+        <a class="footer-link" href="guias.html">Guias</a>
+        <a class="footer-link" href="ofertas.html">Seleções</a>
+        <a class="footer-link" href="politica-editorial.html">Política editorial</a>
+        <a class="footer-link" href="privacidade.html">Privacidade</a>
+        <a class="footer-link" href="termos.html">Termos</a>
+        <a class="footer-link" href="contato.html">Contato</a>
+      </nav>
       <span class="footer-copy">Copyright <span data-current-year></span> Free Island</span>
     </footer>
   </div>
 
   <div class="mobile-cta">
-    <div class="mobile-cta-copy">
-      <strong>Grupo gratuito com vaga</strong>
-      <span>Entrar no WhatsApp agora</span>
-    </div>
-    <a class="button button-whatsapp" data-track="cta_mobile_enter" data-meta-event="whatsapp" data-section="mobile_sticky" data-whatsapp-link href="#">
-      Entrar no grupo
-    </a>
+    <div class="mobile-cta-copy"><strong>Comunidade gratuita</strong><span>WhatsApp com vagas disponíveis</span></div>
+    <a class="button button-whatsapp" data-track="cta_mobile_enter" data-meta-event="whatsapp" data-section="mobile_sticky" data-whatsapp-link href="#">Entrar</a>
   </div>
 
-  <div id="fi-debug" style="display:none; position:fixed; left:10px; right:10px; top:10px; z-index:999999; background:rgba(9,52,29,0.92); color:#f8fff9; border:1px solid rgba(223,242,226,0.18); border-radius:16px; padding:10px 12px; font:12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:0 18px 34px rgba(11,45,26,0.28);">
-    <strong>FI Debug</strong>
-    <div id="fi-debug-body" style="margin-top:6px; opacity:0.95;">inline: waiting...</div>
-  </div>
-
-  <script>
-    (function () {
-      try {
-        var url = new URL(location.href);
-        var on = url.searchParams.get("debug") === "1" || localStorage.getItem("fi_debug") === "1";
-        if (!on) return;
-        var box = document.getElementById("fi-debug");
-        var body = document.getElementById("fi-debug-body");
-        if (box) box.style.display = "block";
-        if (body) body.textContent = "inline: ok (waiting fi.js)";
-
-        window.addEventListener("error", function (e) {
-          if (!body) return;
-          body.textContent = "js_error: " + (e && e.message ? e.message : "unknown");
-        });
-        window.addEventListener("unhandledrejection", function (e) {
-          if (!body) return;
-          body.textContent = "promise_rejection: " + String(e && e.reason ? e.reason : "unknown");
-        });
-
-        setTimeout(function () {
-          if (!body) return;
-          if (window.__FI_SCRIPT_TAG_ERROR) {
-            body.textContent = "inline: fi.js failed to load (script onerror)";
-            return;
-          }
-          if (window.__FI_SCRIPT_TAG_LOADED && !window.__FI_SCRIPT_LOADED) {
-            body.textContent = "inline: fi.js loaded but did not execute (syntax/parse error?)";
-            return;
-          }
-          if (!window.__FI_SCRIPT_LOADED) {
-            body.textContent = "inline: fi.js not loaded (404/block/cache)";
-            return;
-          }
-          if (!window.__FI_LOADED) {
-            body.textContent = "inline: fi.js loaded, waiting init...";
-            return;
-          }
-        }, 2000);
-      } catch (e) {
-        // ignore
-      }
-    })();
-  </script>
-
-  <script defer src="script.js?v=20260830_1"></script>
-  <script defer src="meta-events.js?v=20260708_2"></script>
-  <script defer src="supabase-promotions.js?v=20260830_1"></script>
-  <script
-    defer
-    src="fi.js?v=20260401_1"
-    onload="window.__FI_SCRIPT_TAG_LOADED=1"
-    onerror="window.__FI_SCRIPT_TAG_ERROR=1"
-  ></script>
+  <script defer src="public-data.js?v=20260831_1"></script>
+  <script defer src="script.js?v=20260831_1"></script>
+  <script defer src="supabase-promotions.js?v=20260831_1"></script>
+  <script defer src="privacy-consent.js?v=20260831_1"></script>
 </body>
 </html>
