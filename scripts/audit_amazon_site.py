@@ -256,6 +256,12 @@ def audit_local() -> dict[str, Any]:
             if legacy in content:
                 errors.append(f"legacy_tag:{relative}:{legacy}")
 
+    redirect_page = (ROOT / "r/index.html").read_text(encoding="utf-8")
+    if DISCLOSURE not in redirect_page:
+        errors.append("redirect_disclosure_missing")
+    if '/r/redirect.js?v=20260901_1' not in redirect_page:
+        errors.append("redirect_cache_version_stale")
+
     sitemap_path = ROOT / "sitemap.xml"
     if not sitemap_path.is_file():
         errors.append("sitemap_missing")
@@ -306,6 +312,15 @@ def audit_live(base_url: str) -> dict[str, Any]:
             errors.append(f"live_noindex:{relative}")
         if "<html" not in body.casefold():
             errors.append(f"live_not_html:{relative}")
+    status, _, body, _ = fetch_live(f"{base}/r/")
+    checked += 1
+    if status != 200:
+        errors.append(f"live_http_status:r/index.html:{status}")
+    else:
+        if DISCLOSURE not in body:
+            errors.append("live_redirect_disclosure_missing")
+        if '/r/redirect.js?v=20260901_1' not in body:
+            errors.append("live_redirect_cache_version_stale")
     status, headers, _, final_url = fetch_live(f"{base}/")
     if status == 200 and not any(key.casefold() == "strict-transport-security" for key in headers):
         errors.append("hsts_header_missing")
