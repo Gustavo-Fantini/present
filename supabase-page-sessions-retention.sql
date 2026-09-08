@@ -1,5 +1,13 @@
--- Execute uma vez no SQL Editor do projeto Supabase da landing page.
+-- Execute somente no projeto de métricas da landing (ref: qpzwinntrphqaabatoaf).
 -- Mantém 45 dias de sessões detalhadas e preserva até 24 meses em resumo diário.
+
+do $$
+begin
+  if to_regclass('public.page_sessions') is null then
+    raise exception 'Projeto Supabase incorreto: page_sessions não existe. Abra o projeto de métricas da landing (ref qpzwinntrphqaabatoaf).';
+  end if;
+end;
+$$;
 
 create extension if not exists pg_cron;
 

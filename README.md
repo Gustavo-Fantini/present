@@ -48,10 +48,18 @@ o domínio em open redirect.
 ## Retenção de métricas
 
 Execute `supabase-page-sessions-retention.sql` uma vez no projeto Supabase das
-métricas da landing. O script cria um resumo diário, mantém 45 dias de sessões
+métricas da landing (`qpzwinntrphqaabatoaf`), onde existe `page_sessions`. O
+script cria um resumo diário, mantém 45 dias de sessões
 detalhadas, preserva 24 meses agregados e agenda a limpeza diária com Supabase
-Cron. No projeto do redirecionador, execute
+Cron. No projeto do redirecionador (`jdeszhiykkviymtkdbit`), onde existem
+`short_links` e `short_link_clicks`, execute
 `docs/supabase-click-retention.sql` a partir do repositório do scraper.
+
+Se o script de sessões já foi executado no projeto do redirecionador e exibiu
+`relation "public.page_sessions" does not exist`, rode ali somente
+`supabase-page-sessions-wrong-project-cleanup.sql`; depois troque para o projeto
+de métricas e execute o script de retenção correto. Nenhum desses scripts remove
+as regras da automação ou os links cadastrados.
 
 Depois de uma limpeza inicial grande, rode separadamente no SQL Editor
 `vacuum (analyze) public.page_sessions;`. Use `vacuum full` apenas em janela de
