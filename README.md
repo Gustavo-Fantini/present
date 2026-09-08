@@ -45,6 +45,18 @@ credenciais no payload. A `service_role` permanece exclusivamente no servidor.
 Não existe parâmetro público que aceite uma URL arbitrária, evitando transformar
 o domínio em open redirect.
 
+## Retenção de métricas
+
+Execute `supabase-page-sessions-retention.sql` uma vez no projeto Supabase das
+métricas da landing. O script cria um resumo diário, mantém 45 dias de sessões
+detalhadas, preserva 24 meses agregados e agenda a limpeza diária com Supabase
+Cron. No projeto do redirecionador, execute
+`docs/supabase-click-retention.sql` a partir do repositório do scraper.
+
+Depois de uma limpeza inicial grande, rode separadamente no SQL Editor
+`vacuum (analyze) public.page_sessions;`. Use `vacuum full` apenas em janela de
+manutenção, pois ele bloqueia a tabela enquanto recupera espaço físico.
+
 ## Rotas aceitas
 
 | Sufixo | Loja |
