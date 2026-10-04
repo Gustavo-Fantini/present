@@ -178,6 +178,8 @@ python scripts/audit_amazon_site.py --base-url https://freeisland.onrender.com
 - `guias.html` e `guias/`: índice e dez publicações editoriais;
 - `styles.css`: estilos compartilhados das páginas editoriais;
 - `landing.css`: visual da página inicial;
+- `site.css`: tema claro das páginas de guias, artigos, seleções, informações
+  e dos estados de redirecionamento, com a mesma identidade da página inicial;
 - `public-data.js`: cliente sem credenciais da API pública;
 - `script.js`: CTAs e roteamento dos grupos;
 - `supabase-promotions.js`: renderiza o snapshot sanitizado;

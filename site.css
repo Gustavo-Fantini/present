@@ -1,0 +1,1150 @@
+/* Shared light theme for the editorial and redirect pages.
+   The approved homepage is styled independently by landing.css. */
+body:not([data-page="landing"]) {
+  --bg: #f5f7f2;
+  --bg-2: #eef3e9;
+  --panel: #ffffff;
+  --panel-soft: #eef3e9;
+  --line: #dce5dd;
+  --text: #173329;
+  --muted: #586d60;
+  --green: #43845b;
+  --green-deep: #087e44;
+  --blue: #126fa5;
+  --blue-deep: #095c8b;
+  --shadow: none;
+  color: var(--text);
+  background: var(--bg);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+body:not([data-page="landing"])::before,
+body:not([data-page="landing"]) .hero-card::before,
+body:not([data-page="landing"]) .latest-promotions-section::before {
+  display: none;
+}
+
+body:not([data-page="landing"]) [hidden] {
+  display: none !important;
+}
+
+body:not([data-page="landing"]) .page-shell {
+  width: min(calc(100% - 48px), 980px);
+  padding: 24px 0 32px;
+}
+
+body:not([data-page="landing"]) :is(h1, h2, h3, h4) {
+  color: var(--text);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-transform: none;
+  overflow-wrap: break-word;
+}
+
+body:not([data-page="landing"]) :is(a, button):focus-visible {
+  outline: 3px solid #d09225;
+  outline-offset: 4px;
+}
+
+body:not([data-page="landing"]) a {
+  overflow-wrap: anywhere;
+}
+
+body:not([data-page="landing"]) a:hover {
+  text-underline-offset: 4px;
+}
+
+body:not([data-page="landing"]) .top-alert {
+  min-height: 0;
+  margin: 0 0 20px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #42624d;
+  background: #e9f0e4;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .top-alert-dot {
+  width: 6px;
+  height: 6px;
+  background: #43845b;
+  box-shadow: none;
+}
+
+body:not([data-page="landing"]) :is(.site-header, .hero-top) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+body:not([data-page="landing"]) .brand {
+  flex: 0 1 auto;
+  max-width: none;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+body:not([data-page="landing"]) .brand-mark {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+body:not([data-page="landing"]) .brand-mark img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+body:not([data-page="landing"]) .brand-copy strong {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+
+body:not([data-page="landing"]) .brand-copy span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+body:not([data-page="landing"]) .site-nav {
+  display: flex;
+  width: auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+body:not([data-page="landing"]) .site-nav a {
+  min-height: 38px;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+body:not([data-page="landing"]) .site-nav a:hover,
+body:not([data-page="landing"]) .site-nav a[aria-current="page"] {
+  color: var(--text);
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+body:not([data-page="landing"]) .hero-card {
+  overflow: visible;
+  margin: 0;
+  padding: 0 0 40px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .page-hero {
+  max-width: 760px;
+  margin: 62px auto 40px;
+  padding: 0;
+  text-align: center;
+}
+
+body:not([data-page="landing"]) .hero-card .hero-kicker {
+  margin-top: 62px;
+}
+
+body:not([data-page="landing"]) .hero-kicker {
+  margin: 0;
+  color: #50775d;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.13em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+body:not([data-page="landing"]) :is(.hero-card, .page-hero) h1 {
+  max-width: 23ch;
+  margin: 16px auto 0;
+  font-size: clamp(34px, 4.5vw, 54px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  text-align: center;
+  text-transform: none;
+}
+
+body:not([data-page="landing"]) .article-hero h1,
+body[data-page="article"] .page-hero h1 {
+  max-width: 27ch;
+  font-size: clamp(32px, 4.2vw, 48px);
+}
+
+body:not([data-page="landing"]) .hero-copy {
+  max-width: 60ch;
+  margin: 20px auto 0;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.65;
+  text-align: center;
+}
+
+body:not([data-page="landing"]) .main-stack {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+}
+
+body:not([data-page="landing"]) :is(.info-card, .content-panel, .guide-article) {
+  min-width: 0;
+  margin: 0;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: var(--text);
+  background: #fff;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) :is(.info-card, .content-panel, .longform, .guide-article) h2 {
+  margin: 24px 0 0;
+  color: var(--text);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+body:not([data-page="landing"]) :is(.info-card, .content-panel) > .section-label + h2 {
+  margin-top: 10px;
+}
+
+body:not([data-page="landing"]) .section-label {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #50775d;
+  background: none;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+}
+
+body:not([data-page="landing"]) :is(.guide-intro, .affiliate-copy, .selection-card p, .editorial-card p, .method-list li, .trust-list li, .guide-article p, .guide-article li) {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+body:not([data-page="landing"]) :is(.method-list strong, .trust-list strong, .guide-article strong, .longform strong, .static-fallback strong) {
+  color: var(--text);
+  font-weight: 600;
+}
+
+body:not([data-page="landing"]) .trust-list li::before {
+  background: #43845b;
+  box-shadow: none;
+}
+
+body:not([data-page="landing"]) .trust-list li {
+  border-color: var(--line);
+  border-radius: 10px;
+}
+
+body:not([data-page="landing"]) :is(.editorial-grid, .editorial-grid-full, .selection-list, .guide-index) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+body:not([data-page="landing"]) .selection-list {
+  margin-top: 0;
+}
+
+body:not([data-page="landing"]) :is(.editorial-card, .selection-card) {
+  min-width: 0;
+  padding: 23px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: none;
+}
+
+body:not([data-page="landing"]) .editorial-card {
+  background: #fafcf8;
+}
+
+body:not([data-page="landing"]) .selection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body:not([data-page="landing"]) .editorial-card > span {
+  color: #50775d;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+body:not([data-page="landing"]) :is(.editorial-card h2, .editorial-card h3, .selection-card h2) {
+  margin: 10px 0 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: -0.025em;
+}
+
+body:not([data-page="landing"]) .editorial-card :is(h2, h3) a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+body:not([data-page="landing"]) .editorial-card :is(h2, h3) a:hover {
+  color: #356545;
+  text-decoration: underline;
+  text-decoration-color: #7b9c7f;
+}
+
+body:not([data-page="landing"]) .editorial-card time {
+  margin-top: 14px;
+  color: #63786a;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+body:not([data-page="landing"]) .selection-actions {
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+body:not([data-page="landing"]) .selection-actions > a,
+body:not([data-page="landing"]) .compact-link-grid a,
+body:not([data-page="landing"]) .guide-index a {
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #355c40;
+  background: #f3f7ef;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  text-decoration: none;
+}
+
+body:not([data-page="landing"]) :is(.selection-actions > a, .compact-link-grid a, .guide-index a):hover {
+  background: #eaf1e4;
+  text-decoration: underline;
+}
+
+/* These two declarations override the legacy sponsored-link !important rules. */
+body:not([data-page="landing"]) .sponsored-link {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 14px 16px;
+  border: 1px solid #e9e3d3 !important;
+  border-radius: 10px;
+  color: #50422e;
+  background: #fffdf7 !important;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+body:not([data-page="landing"]) .sponsored-link:hover {
+  border-color: #bd9760 !important;
+  background: #fffaf0 !important;
+}
+
+body:not([data-page="landing"]) .sponsored-link span,
+body:not([data-page="landing"]) .affiliate-direct-link span,
+body:not([data-page="landing"]) .affiliate-label {
+  flex: 0 1 auto;
+  padding: 0;
+  border-radius: 0;
+  color: #826847;
+  background: none;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+body:not([data-page="landing"]) .longform {
+  width: 100%;
+  max-width: 70ch;
+  margin-inline: auto;
+}
+
+body:not([data-page="landing"]) .longform p,
+body:not([data-page="landing"]) .longform li {
+  color: #435a4c;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+body:not([data-page="landing"]) .longform h2 {
+  margin-top: 34px;
+  font-size: 27px;
+}
+
+body:not([data-page="landing"]) .longform h2:first-child {
+  margin-top: 0;
+}
+
+body:not([data-page="landing"]) .longform h3 {
+  margin: 24px 0 0;
+  color: var(--text);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+body:not([data-page="landing"]) .longform a:not(.button):not(.small-link),
+body:not([data-page="landing"]) .breadcrumb a,
+body:not([data-page="landing"]) .article-meta a {
+  color: #356545;
+  text-decoration: underline;
+  text-decoration-color: #8ca98b;
+  text-underline-offset: 4px;
+}
+
+body:not([data-page="landing"]) .longform a:not(.button):not(.small-link):hover {
+  color: #173329;
+  text-decoration-color: currentColor;
+}
+
+body:not([data-page="landing"]) .longform .article-lead {
+  color: #2e523c !important;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+body:not([data-page="landing"]) .breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0;
+  color: #5f7765;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+body:not([data-page="landing"]) .article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 16px 0 23px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  color: #607366;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+body:not([data-page="landing"]) .guide-meta {
+  color: #607366;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+body:not([data-page="landing"]) .guide-note {
+  border-left: 3px solid #43845b;
+  border-radius: 0 9px 9px 0;
+  background: #edf3e8;
+}
+
+body:not([data-page="landing"]) :is(.longform, .content-panel) :is(pre, code) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+body:not([data-page="landing"]) :is(.longform, .content-panel) table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+body:not([data-page="landing"]) :is(.longform, .content-panel) :is(th, td) {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+body:not([data-page="landing"]) .affiliate-transparency {
+  background: #fffdf7;
+  border-color: #e9e3d3;
+}
+
+body:not([data-page="landing"]) .affiliate-disclosure {
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #504a3b;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+body:not([data-page="landing"]) .affiliate-updated {
+  color: #627064;
+  font-size: 12px;
+}
+
+body:not([data-page="landing"]) .affiliate-item {
+  border-color: var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+body:not([data-page="landing"]) .affiliate-item a {
+  color: #355c40;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration-color: #8ca98b;
+}
+
+body:not([data-page="landing"]) .affiliate-direct-link {
+  border-color: #e9e3d3;
+  border-radius: 10px;
+  color: #50422e;
+  background: #fffdf7;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body:not([data-page="landing"]) .static-fallback {
+  border-color: var(--line);
+  border-radius: 10px;
+  background: #eef3e9;
+}
+
+body:not([data-page="landing"]) .small-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body:not([data-page="landing"]) :is(.small-link, .micro-link) {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #355c40;
+  background: #f0f5ea;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-transform: none;
+  box-shadow: none;
+}
+
+body:not([data-page="landing"]) :is(.small-link, .micro-link):hover {
+  background: #e8f0e1;
+  text-decoration: underline;
+}
+
+body:not([data-page="landing"]) .button {
+  width: 100%;
+  min-height: 57px;
+  padding: 14px 18px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: #fff;
+  font: 600 15px/1.35 "Outfit", system-ui, sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: none;
+  transition: background 0.18s, transform 0.18s;
+}
+
+body:not([data-page="landing"]) .button:hover {
+  filter: none;
+  transform: translateY(-2px);
+}
+
+body:not([data-page="landing"]) .button-whatsapp {
+  background: #087e44;
+}
+
+body:not([data-page="landing"]) .button-whatsapp:hover {
+  background: #056736;
+}
+
+body:not([data-page="landing"]) .button-telegram,
+body:not([data-page="landing"]) .button-instagram {
+  background: #126fa5;
+}
+
+body:not([data-page="landing"]) .button-telegram:hover,
+body:not([data-page="landing"]) .button-instagram:hover {
+  background: #095c8b;
+}
+
+body:not([data-page="landing"]) .button-secondary {
+  border-color: var(--line);
+  color: #355c40;
+  background: #edf3e8;
+}
+
+body:not([data-page="landing"]) .button-secondary:hover {
+  background: #e3edde;
+}
+
+body:not([data-page="landing"]) .button[aria-busy="true"] {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+body:not([data-page="landing"]) .channel-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 660px);
+  margin: 24px auto 0;
+}
+
+body:not([data-page="landing"]) .channel-actions .button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+body:not([data-page="landing"]) :is(.channel-icon, .button-icon, .button-icon svg) {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+}
+
+body:not([data-page="landing"]) .channel-arrow {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin-left: auto;
+  opacity: 0.8;
+}
+
+body:not([data-page="landing"]) .channel-status {
+  max-width: 660px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #2d5139;
+  background: #e5ede2;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+body:not([data-page="landing"]) .final-card {
+  margin: 0;
+  padding: 30px;
+  border: 1px solid #d9e5d6;
+  border-radius: 15px;
+  background: #e9f0e4;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .final-card h2 {
+  margin: 10px 0 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+body:not([data-page="landing"]) .final-copy {
+  max-width: 55ch;
+  margin: 12px auto 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+body:not([data-page="landing"]) .site-footer {
+  display: block;
+  margin: 34px 0 0;
+  padding: 25px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+}
+
+body:not([data-page="landing"]) .footer-brand {
+  margin-bottom: 15px;
+}
+
+body:not([data-page="landing"]) .footer-brand strong {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+body:not([data-page="landing"]) .footer-brand p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+body:not([data-page="landing"]) .footer-link {
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  background: none;
+  font: 400 12px/1.6 "Outfit", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+body:not([data-page="landing"]) .footer-link:hover {
+  color: var(--text);
+  background: none;
+  text-decoration: underline;
+}
+
+body:not([data-page="landing"]) .footer-copy {
+  display: block;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+body:not([data-page="landing"]) .mobile-cta {
+  display: none;
+}
+
+body:not([data-page="landing"]) .consent-banner {
+  width: min(calc(100% - 24px), 860px);
+  padding: 14px 18px;
+  border: 1px solid #d9e2d6;
+  border-radius: 13px;
+  color: #284333;
+  background: #fffefa;
+  box-shadow: 0 6px 30px #0e281e20;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .consent-copy strong {
+  color: #284333;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+body:not([data-page="landing"]) .consent-copy p {
+  margin: 4px 0;
+  color: #677369;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+body:not([data-page="landing"]) .consent-copy a {
+  color: #51745b;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+body:not([data-page="landing"]) .consent-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+body:not([data-page="landing"]) .consent-actions button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-color: #dce4d6;
+  border-radius: 9px;
+  color: #35523d;
+  background: #eff3e9;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+body:not([data-page="landing"]) .consent-actions .consent-accept {
+  color: #fff;
+  background: #315e40;
+}
+
+body[data-page="redirect"],
+body[data-page="fallback"] {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+body:not([data-page="landing"]) .redirect-card {
+  width: min(100%, 460px);
+  padding: 34px 28px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: var(--text);
+  background: #fff;
+  box-shadow: none;
+  text-align: center;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body:not([data-page="landing"]) .redirect-card .logo {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+body:not([data-page="landing"]) .redirect-card .logo img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
+
+body:not([data-page="landing"]) .redirect-card h1 {
+  margin: 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-transform: none;
+}
+
+body:not([data-page="landing"]) .redirect-card p {
+  max-width: 34ch;
+  margin: 16px auto 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+body:not([data-page="landing"]) .spinner {
+  width: 38px;
+  height: 38px;
+  margin: 22px auto 0;
+  border: 3px solid #dce5dd;
+  border-top-color: #43845b;
+  border-radius: 50%;
+  animation: site-spin 0.8s linear infinite;
+}
+
+body:not([data-page="landing"]) .fallback-link {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  color: #fff;
+  background: #087e44;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+body:not([data-page="landing"]) .fallback-link.is-visible {
+  display: inline-flex;
+}
+
+body:not([data-page="landing"]) .fallback-link:hover {
+  background: #056736;
+}
+
+body:not([data-page="landing"]) .redirect-card .amazon-disclosure {
+  padding: 12px 14px;
+  border: 1px solid #e9e3d3;
+  border-radius: 9px;
+  color: #6a593e;
+  background: #fffdf7;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+body:not([data-page="landing"]):is(.error-state, .confirmation-state) .spinner {
+  display: none;
+}
+
+@keyframes site-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  body:not([data-page="landing"]) .page-shell {
+    width: calc(100% - 36px);
+    padding-top: 16px;
+  }
+
+  body:not([data-page="landing"]) :is(.site-header, .hero-top) {
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  body:not([data-page="landing"]) .brand-mark,
+  body:not([data-page="landing"]) .brand-mark img {
+    width: 44px;
+    height: 44px;
+  }
+
+  body:not([data-page="landing"]) .brand-mark {
+    flex-basis: 44px;
+  }
+
+  body:not([data-page="landing"]) .brand-copy strong {
+    font-size: 18px;
+  }
+
+  body:not([data-page="landing"]) .brand-copy span {
+    font-size: 10px;
+  }
+
+  body:not([data-page="landing"]) .site-nav {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 18px;
+  }
+
+  body:not([data-page="landing"]) .site-nav a {
+    font-size: 12px;
+  }
+
+  body:not([data-page="landing"]) .top-alert {
+    margin-bottom: 16px;
+    font-size: 10px;
+  }
+
+  body:not([data-page="landing"]) .page-hero {
+    margin: 30px auto;
+  }
+
+  body:not([data-page="landing"]) .hero-card {
+    padding-bottom: 30px;
+  }
+
+  body:not([data-page="landing"]) .hero-card .hero-kicker {
+    margin-top: 30px;
+  }
+
+  body:not([data-page="landing"]) .hero-kicker {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  body:not([data-page="landing"]) :is(.hero-card, .page-hero) h1 {
+    margin-top: 13px;
+    font-size: 34px;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+  }
+
+  body:not([data-page="landing"]) .article-hero h1,
+  body[data-page="article"] .page-hero h1 {
+    font-size: 32px;
+  }
+
+  body:not([data-page="landing"]) .hero-copy {
+    margin-top: 15px;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  body:not([data-page="landing"]) .main-stack {
+    gap: 18px;
+  }
+
+  body:not([data-page="landing"]) :is(.info-card, .content-panel, .guide-article) {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  body:not([data-page="landing"]) :is(.editorial-grid, .editorial-grid-full, .selection-list, .guide-index) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+  }
+
+  body:not([data-page="landing"]) :is(.editorial-card, .selection-card) {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  body:not([data-page="landing"]) :is(.info-card, .content-panel, .longform, .guide-article) h2 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+
+  body:not([data-page="landing"]) :is(.editorial-card h2, .editorial-card h3, .selection-card h2) {
+    font-size: 22px;
+  }
+
+  body:not([data-page="landing"]) .longform p,
+  body:not([data-page="landing"]) .longform li {
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  body:not([data-page="landing"]) .longform h3 {
+    font-size: 20px;
+  }
+
+  body:not([data-page="landing"]) .longform .article-lead {
+    font-size: 17px;
+  }
+
+  body:not([data-page="landing"]) .article-meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  body:not([data-page="landing"]) .channel-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  body:not([data-page="landing"]) .final-card {
+    padding: 27px 18px;
+    border-radius: 13px;
+  }
+
+  body:not([data-page="landing"]) .final-card h2 {
+    font-size: 28px;
+  }
+
+  body:not([data-page="landing"]) .footer-actions {
+    gap: 7px 15px;
+  }
+
+  body:not([data-page="landing"]) .footer-link {
+    font-size: 11px;
+  }
+
+  body:not([data-page="landing"]) .consent-banner {
+    gap: 9px;
+    padding: 11px 13px;
+  }
+
+  body:not([data-page="landing"]) .consent-actions {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:not([data-page="landing"]) .consent-actions button {
+    min-height: 34px;
+    padding: 6px;
+  }
+
+  body[data-page="redirect"],
+  body[data-page="fallback"] {
+    padding: 18px;
+  }
+
+  body:not([data-page="landing"]) .redirect-card {
+    padding: 28px 20px;
+  }
+
+  body:not([data-page="landing"]) .redirect-card h1 {
+    font-size: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:not([data-page="landing"]) .button,
+  body:not([data-page="landing"]) .spinner {
+    animation: none;
+    transition: none;
+  }
+
+  body:not([data-page="landing"]) .button:hover {
+    transform: none;
+  }
+}
