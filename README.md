@@ -1,7 +1,10 @@
 # Free Island Landing Page
 
-Landing estática da Free Island com captação para o WhatsApp, promoções
-recentes, público total e métricas dos links próprios.
+Landing estática da Free Island com entrada gratuita no WhatsApp e Telegram,
+promoções recentes, loja Amazon, público total e métricas dos links próprios.
+Os dois canais têm botões com as mesmas dimensões e destaque no início e no
+final da página. A loja `https://www.amazon.com.br/shop/freeislandt0b` aparece
+como publicidade, abaixo da escolha dos canais.
 
 ## Publicação no Render
 
@@ -18,6 +21,11 @@ de contingência enquanto essa regra não estiver ativa.
 | Source | Destination | Action |
 | --- | --- | --- |
 | `/:productid/:network` | `/r/index.html` | `Rewrite` |
+
+Com o auto-deploy do Render habilitado para `main`, cada push publica a landing.
+Essa publicação não exige reiniciar a automação na EC2. Depois do deploy,
+confira os dois canais, a loja Amazon, os dados públicos e o consentimento no
+celular e no desktop; acompanhe a página e a API pública por cinco minutos.
 
 Essa regra permite URLs como:
 
@@ -89,8 +97,9 @@ permitir um redirecionamento ativo.
 
 - `index.html` e `ofertas.html` exibem a declaração exigida e identificam cada
   link Amazon como publicidade;
-- os links públicos da candidatura apontam diretamente para `amazon.com.br`,
-  incluem `tag=freeislandt0b-20` e preservam a origem do tráfego;
+- links de produto e seleção apontam diretamente para `amazon.com.br`,
+  incluem `tag=freeislandt0b-20` e preservam a origem do tráfego; a URL de loja
+  fornecida pelo programa é usada exatamente como recebida;
 - links curtos `/amzn` exibem uma tela de confirmação com o Link Especial
   rastreado, em vez de redirecionar automaticamente;
 - `ofertas.html` apresenta seleções por categoria sem copiar preço, estoque,
@@ -149,15 +158,26 @@ após consentimento ele carrega `fi.js` (métricas próprias em `page_sessions`)
 Os convites são configurados em cada destino WhatsApp da operação Main no
 painel do Hunter. `script.js` consulta a API pública a cada clique, escolhe o
 grupo de maior prioridade abaixo de 990 membros e volta automaticamente ao
-grupo prioritário quando uma vaga é aberta. `WHATSAPP_FALLBACK_URL` é usado
-somente quando o backend está temporariamente indisponível.
+grupo prioritário quando uma vaga é aberta. Grupos desativados, lotados ou
+sem dados confirmados não são oferecidos. A consulta de um clique nunca usa
+cache antigo: se a API falhar, a página informa a indisponibilidade e permite
+nova tentativa ou entrada no Telegram, sem inventar um convite de contingência.
+
+Valide o roteamento e a aquisição antes de publicar:
+
+```text
+node scripts/test_landing_routes.cjs
+python scripts/audit_amazon_site.py
+python scripts/audit_amazon_site.py --base-url https://freeisland.onrender.com
+```
 
 ## Arquivos principais
 
 - `index.html`: estrutura da landing;
 - `ofertas.html`: links especiais identificados e curadoria;
 - `guias.html` e `guias/`: índice e dez publicações editoriais;
-- `styles.css`: visual;
+- `styles.css`: estilos compartilhados das páginas editoriais;
+- `landing.css`: visual da página inicial;
 - `public-data.js`: cliente sem credenciais da API pública;
 - `script.js`: CTAs e roteamento dos grupos;
 - `supabase-promotions.js`: renderiza o snapshot sanitizado;

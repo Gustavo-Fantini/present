@@ -1,6 +1,5 @@
 (function () {
   var FALLBACK_IMAGE = "assets/logo_sem_fundo.png";
-  var FALLBACK_MEMBER_COUNT = 620;
   var PROMOTIONS_LIMIT = 5;
   var BR_TIMEZONE = "America/Sao_Paulo";
 
@@ -75,7 +74,7 @@
     var body = createElement("div", "promotion-body");
     var title = createElement("h3", "promotion-title", promotion.product_title || "Publicação recente");
     var time = createElement("div", "promotion-time", "Publicado " + formatRelativeTime(promotion.published_at));
-    var cta = createElement("a", "promotion-cta", "Receber novas publicações");
+    var cta = createElement("a", "promotion-cta", "Escolher onde acompanhar");
 
     image.src = promotion.image_public_url || FALLBACK_IMAGE;
     image.alt = "Produto divulgado pela Free Island: " + (promotion.product_title || "tecnologia");
@@ -91,24 +90,26 @@
     body.appendChild(time);
     body.appendChild(createElement("p", "promotion-disclaimer", "A publicação completa e as condições vigentes ficam na comunidade."));
 
-    cta.href = "#";
-    cta.setAttribute("data-whatsapp-link", "");
-    cta.setAttribute("data-meta-event", "whatsapp");
+    cta.href = "#inicio";
     cta.setAttribute("data-section", "latest_promotions");
     cta.setAttribute("data-track", "cta_latest_promotion");
-    cta.setAttribute("aria-label", "Receber publicações da Free Island no WhatsApp, item " + (index + 1));
+    cta.setAttribute("aria-label", "Escolher WhatsApp ou Telegram para acompanhar a Free Island, item " + (index + 1));
     body.appendChild(cta);
     card.appendChild(media);
     card.appendChild(body);
     return card;
   }
 
-  function renderAudience(section, audience) {
-    var target = section.querySelector("[data-activity-members]");
-    var total = Number(audience && audience.total_members);
-    if (!target) return;
-    if (!Number.isFinite(total) || total <= 0) total = FALLBACK_MEMBER_COUNT;
-    target.textContent = "👥 " + formatNumber(total) + " pessoas na comunidade";
+  function renderAudience(audience, stale) {
+    var targets = document.querySelectorAll("[data-activity-members]");
+    var value = audience && audience.total_members;
+    var total = typeof value === "number" ? value : NaN;
+    var available = !stale && audience && audience.status !== "unavailable" &&
+      Number.isInteger(total) && total >= 0;
+    targets.forEach(function (target) {
+      target.hidden = !available;
+      target.textContent = available ? "👥 " + formatNumber(total) + " pessoas na comunidade" : "";
+    });
   }
 
   function renderSnapshot(section, snapshot) {
@@ -119,7 +120,7 @@
     var promotions = Array.isArray(snapshot.promotions) ? snapshot.promotions.slice(0, PROMOTIONS_LIMIT) : [];
     if (!list) return;
 
-    renderAudience(section, snapshot.audience || {});
+    renderAudience(snapshot.audience, snapshot.stale);
     if (countTarget) countTarget.textContent = "🟢 " + Number(snapshot.today_count || 0) + " publicações hoje";
     if (latestTarget) {
       latestTarget.hidden = !promotions.length;
@@ -138,9 +139,6 @@
     promotions.forEach(function (promotion, index) {
       list.appendChild(createPromotionCard(promotion, index));
     });
-    if (typeof window.FreeIslandApplyWhatsAppLinks === "function") {
-      window.FreeIslandApplyWhatsAppLinks(section);
-    }
   }
 
   function showStaticFallback(section, error) {
@@ -148,6 +146,7 @@
     var fallback = section.querySelector("[data-promotions-fallback]");
     if (list) list.hidden = true;
     if (fallback) fallback.hidden = false;
+    renderAudience(null);
     debugLog("API pública indisponível; mantendo conteúdo estático", error && error.message);
   }
 

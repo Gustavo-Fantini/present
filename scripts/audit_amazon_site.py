@@ -18,6 +18,8 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_BASE = "https://freeisland.onrender.com"
 EXPECTED_TAG = os.getenv("AMAZON_ASSOCIATE_TAG", "freeislandt0b-20").strip()
+AMAZON_STOREFRONT_URL = "https://www.amazon.com.br/shop/freeislandt0b"
+TELEGRAM_COMMUNITY_URL = "https://t.me/freeislandpromos"
 DISCLOSURE = (
     "Como participante do Programa de Associados da Amazon, "
     "sou remunerado pelas compras qualificadas efetuadas."
@@ -59,13 +61,27 @@ class SiteParser(HTMLParser):
         self.description = ""
         self.robots = ""
         self.dates: list[str] = []
+        self.headings: list[str] = []
         self._anchor: dict[str, Any] | None = None
+        self._heading_parts: list[str] | None = None
+        self._elements: list[tuple[str, dict[str, str]]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key.casefold(): str(value or "") for key, value in attrs}
         normalized = tag.casefold()
         if normalized == "a":
-            self._anchor = {"href": values.get("href", ""), "rel": values.get("rel", ""), "text": []}
+            self._anchor = {
+                "href": values.get("href", ""),
+                "rel": values.get("rel", ""),
+                "class": values.get("class", ""),
+                "data-whatsapp-link": "1" if "data-whatsapp-link" in values else "",
+                "data-meta-event": values.get("data-meta-event", ""),
+                "data-section": values.get("data-section", ""),
+                "container-classes": " ".join(element.get("class", "") for _, element in self._elements),
+                "text": [],
+            }
+        elif normalized == "h1":
+            self._heading_parts = []
         elif normalized == "img":
             self.images.append(values.get("src", ""))
         elif normalized == "script" and values.get("src"):
@@ -80,17 +96,26 @@ class SiteParser(HTMLParser):
                 self.robots = values.get("content", "")
         elif normalized == "time" and values.get("datetime"):
             self.dates.append(values["datetime"])
+        if normalized not in {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}:
+            self._elements.append((normalized, values))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
 
     def handle_endtag(self, tag: str) -> None:
         if tag.casefold() == "a" and self._anchor is not None:
-            self.links.append(
-                {
-                    "href": str(self._anchor["href"]),
-                    "rel": str(self._anchor["rel"]),
-                    "text": " ".join(self._anchor["text"]).strip(),
-                }
-            )
+            link = dict(self._anchor)
+            link["text"] = " ".join(self._anchor["text"]).strip()
+            self.links.append(link)
             self._anchor = None
+        if tag.casefold() == "h1" and self._heading_parts is not None:
+            self.headings.append(" ".join(self._heading_parts).strip())
+            self._heading_parts = None
+        for index in range(len(self._elements) - 1, -1, -1):
+            if self._elements[index][0] == tag.casefold():
+                del self._elements[index:]
+                break
 
     def handle_data(self, data: str) -> None:
         cleaned = re.sub(r"\s+", " ", data).strip()
@@ -99,6 +124,8 @@ class SiteParser(HTMLParser):
         self.text_parts.append(cleaned)
         if self._anchor is not None:
             self._anchor["text"].append(cleaned)
+        if self._heading_parts is not None:
+            self._heading_parts.append(cleaned)
 
     @property
     def text(self) -> str:
@@ -152,6 +179,36 @@ def resolve_local_link(source: str, href: str) -> Path | None:
     return target.resolve()
 
 
+def audit_home_acquisition(home: SiteParser) -> list[str]:
+    """Keep acquisition simple while preserving both community choices."""
+    errors: list[str] = []
+    if len(home.headings) != 1 or not home.headings[0]:
+        errors.append("homepage_heading_missing_or_ambiguous")
+    for section, container_class in (("hero", "hero-card"), ("final", "final-card")):
+        links = [link for link in home.links if container_class in link["container-classes"].split()]
+        whatsapp = [link for link in links if link["data-whatsapp-link"]]
+        telegram = [link for link in links if link["href"] == TELEGRAM_COMMUNITY_URL]
+        for platform, candidates in (("whatsapp", whatsapp), ("telegram", telegram)):
+            if len(candidates) != 1:
+                errors.append(f"community_cta_missing_or_duplicated:{section}:{platform}")
+                continue
+            link = candidates[0]
+            if "button" not in link["class"].split():
+                errors.append(f"community_cta_not_button:{section}:{platform}")
+            if link["data-meta-event"] != platform or link["data-section"] != section:
+                errors.append(f"community_cta_tracking_missing:{section}:{platform}")
+            if platform not in link["text"].casefold():
+                errors.append(f"community_cta_destination_unclear:{section}:{platform}")
+    storefront = [link for link in home.links if link["href"] == AMAZON_STOREFRONT_URL]
+    if not storefront:
+        errors.append("amazon_storefront_missing")
+    elif any("publicidade" not in link["text"].casefold() for link in storefront):
+        errors.append("amazon_storefront_advertising_label_missing")
+    if not any(urlsplit(link["href"]).path.lstrip("/") == "guias.html" for link in home.links):
+        errors.append("homepage_guide_navigation_missing")
+    return errors
+
+
 def audit_local() -> dict[str, Any]:
     errors: list[str] = []
     pages: dict[str, SiteParser] = {}
@@ -185,7 +242,9 @@ def audit_local() -> dict[str, Any]:
                 page_has_amazon = True
                 amazon_links += 1
                 tags = parse_qs(parsed.query, keep_blank_values=True).get("tag", [])
-                if tags != [EXPECTED_TAG]:
+                # The supplied, approved storefront is an exact URL. Product,
+                # search and category links still require the configured tag.
+                if href != AMAZON_STOREFRONT_URL and tags != [EXPECTED_TAG]:
                     errors.append(f"invalid_amazon_tag:{relative}:{href}")
                 rel = set(link["rel"].casefold().split())
                 if not {"sponsored", "noopener"}.issubset(rel):
@@ -234,8 +293,8 @@ def audit_local() -> dict[str, Any]:
             errors.append(f"article_not_recent:{relative}:{age}")
 
     home = pages.get("index.html")
-    if home is not None and word_count(home.text) < 450:
-        errors.append("homepage_static_content_too_short")
+    if home is not None:
+        errors.extend(audit_home_acquisition(home))
     guide_index = pages.get("guias.html")
     if guide_index is not None:
         indexed_articles = {
@@ -330,7 +389,7 @@ def audit_live(base_url: str) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audita a landing para a revisão do Programa de Associados Amazon.")
+    parser = argparse.ArgumentParser(description="Audita a landing, os acessos à comunidade e a identificação dos links Amazon.")
     parser.add_argument("--base-url", default="", help="Também valida a versão publicada por HTTPS.")
     parser.add_argument("--output", type=Path, help="Salva o relatório JSON neste caminho.")
     args = parser.parse_args()

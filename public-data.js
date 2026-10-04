@@ -32,18 +32,20 @@
     });
   }
 
-  function getSnapshot(forceRefresh) {
+  function getSnapshot(forceRefresh, options) {
+    var allowStale = !options || options.allowStale !== false;
     if (!forceRefresh && cachedSnapshot && Date.now() - cachedAt < CACHE_MS) {
       return Promise.resolve(cachedSnapshot);
     }
-    if (activeRequest) return activeRequest;
-    activeRequest = fetchSnapshot().catch(function (error) {
-      if (cachedSnapshot) return cachedSnapshot;
+    if (!activeRequest) {
+      activeRequest = fetchSnapshot().finally(function () {
+        activeRequest = null;
+      });
+    }
+    return activeRequest.catch(function (error) {
+      if (allowStale && cachedSnapshot) return Object.assign({}, cachedSnapshot, { stale: true });
       throw error;
-    }).finally(function () {
-      activeRequest = null;
     });
-    return activeRequest;
   }
 
   window.FreeIslandPublicData = {

@@ -2,6 +2,17 @@
 
 Revisado em 31 de agosto de 2026. Este documento transforma os requisitos públicos da Amazon.com.br em controles verificáveis para a Free Island. A decisão final continua sendo exclusiva da Amazon; nenhuma alteração técnica consegue prometer aprovação permanente.
 
+## Evolução após a aprovação
+
+Em 4 de outubro de 2026, Gustavo informou a aprovação e a URL de sua loja:
+`https://www.amazon.com.br/shop/freeislandt0b`. O histórico da candidatura permanece abaixo para consulta.
+
+A página inicial passa a priorizar a entrada gratuita na comunidade, com WhatsApp e Telegram apresentados como botões equivalentes no início e no final. A auditoria verifica a presença e a identificação dessas duas escolhas; tamanho, contraste e comportamento em telas pequenas são conferidos no navegador. Os guias, a autoria, as políticas, a declaração de participante e o consentimento de métricas permanecem acessíveis.
+
+O antigo limite interno de 450 palavras na página inicial foi removido: ele era um critério do projeto e não deve obrigar a landing a repetir texto para captar participantes. Os dez artigos completos continuam sendo auditados separadamente.
+
+A loja é apresentada como publicidade e abre na URL exata fornecida, com `rel="sponsored noopener"`. Somente essa URL recebe a exceção de não exigir o parâmetro `tag`; links de produtos, pesquisas e categorias Amazon continuam exigindo `freeislandt0b-20`. Não se deduz um novo ID de rastreamento a partir do endereço da loja.
+
 ## Diagnóstico da rejeição
 
 A mensagem recebida apontou que a landing tinha poucas ofertas válidas ou exibia cupons vencidos. A auditoria identificou três causas concretas:
