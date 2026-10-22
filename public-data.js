@@ -5,12 +5,13 @@
   var cachedSnapshot = null;
   var cachedAt = 0;
   var activeRequest = null;
+  var activeRoutingRequest = null;
 
-  function fetchSnapshot() {
+  function fetchSnapshot(routing) {
     var controller = new AbortController();
     var timer = window.setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
 
-    return fetch(ENDPOINT, {
+    return fetch(ENDPOINT + (routing ? "?routing=1" : ""), {
       method: "GET",
       mode: "cors",
       credentials: "omit",
@@ -24,8 +25,10 @@
       if (!payload || payload.ok !== true || payload.operation_slug !== "free-island-principal") {
         throw new Error("invalid_public_snapshot");
       }
-      cachedSnapshot = payload;
-      cachedAt = Date.now();
+      if (!routing) {
+        cachedSnapshot = payload;
+        cachedAt = Date.now();
+      }
       return payload;
     }).finally(function () {
       window.clearTimeout(timer);
@@ -50,6 +53,12 @@
 
   window.FreeIslandPublicData = {
     endpoint: ENDPOINT,
-    get: getSnapshot
+    get: getSnapshot,
+    getRoute: function () {
+      if (!activeRoutingRequest) {
+        activeRoutingRequest = fetchSnapshot(true).finally(function () { activeRoutingRequest = null; });
+      }
+      return activeRoutingRequest;
+    }
   };
 })();

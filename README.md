@@ -163,6 +163,15 @@ sem dados confirmados não são oferecidos. A consulta de um clique nunca usa
 cache antigo: se a API falhar, a página informa a indisponibilidade e permite
 nova tentativa ou entrada no Telegram, sem inventar um convite de contingência.
 
+Quando dois destinos têm a mesma prioridade, a ordem numérica dos nomes dos
+grupos desempata (01, 02, 03, 10); o ID interno só desempata nomes iguais.
+`public-data.js` consulta `GET /api/public/landing?routing=1` para os convites,
+sem aproveitar o cache de produtos. Essa resposta usa a lotação mais recente
+publicada pela automação e `Cache-Control: no-store`. A página revalida ao abrir,
+clicar, voltar à aba ou restaurar a navegação; uma vaga reaberta devolve a
+preferência ao primeiro grupo elegível. Contadores de grupo indisponíveis ou
+marcados como antigos não habilitam convites.
+
 Valide o roteamento e a aquisição antes de publicar:
 
 ```text

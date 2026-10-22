@@ -36,6 +36,7 @@ function selectAvailableWhatsAppGroup(groups) {
     if (!Number.isFinite(leftPriority)) leftPriority = 100;
     if (!Number.isFinite(rightPriority)) rightPriority = 100;
     return leftPriority - rightPriority ||
+      String(left.name || "").localeCompare(String(right.name || ""), "pt-BR", { numeric: true, sensitivity: "base" }) ||
       String(left.destination_id || left.name || "").localeCompare(String(right.destination_id || right.name || ""));
   });
 
@@ -43,7 +44,8 @@ function selectAvailableWhatsAppGroup(groups) {
     var members = routingNumber(group.members);
     var capacity = routingNumber(group.capacity_limit, 990);
     return Number.isInteger(members) && members >= 0 && Number.isInteger(capacity) &&
-      capacity > 0 && capacity <= 1024 && members < capacity && group.status !== "unavailable";
+      capacity > 0 && capacity <= 1024 && members < capacity &&
+      group.status !== "unavailable" && group.status !== "stale";
   });
   return available ? normalizeWhatsAppGroupUrl(available.invite_url) : "";
 }
@@ -56,10 +58,10 @@ function routingNumber(value, defaultValue) {
 }
 
 function fetchWhatsAppGroupRoute() {
-  if (!window.FreeIslandPublicData || typeof window.FreeIslandPublicData.get !== "function") {
+  if (!window.FreeIslandPublicData || typeof window.FreeIslandPublicData.getRoute !== "function") {
     return Promise.reject(new Error("public_data_client_unavailable"));
   }
-  return window.FreeIslandPublicData.get(true, { allowStale: false }).then(function (snapshot) {
+  return window.FreeIslandPublicData.getRoute().then(function (snapshot) {
     if (!snapshot || snapshot.ok !== true || snapshot.stale === true ||
       snapshot.operation_slug !== FREE_ISLAND_OPERATION_SLUG) {
       throw new Error("invalid_whatsapp_routing_snapshot");
@@ -328,6 +330,13 @@ window.FreeIslandResolveWhatsAppGroup = resolveWhatsAppGroupUrl;
 applyWhatsAppLinks(document);
 resolveWhatsAppGroupUrl(false);
 window.setInterval(function () { resolveWhatsAppGroupUrl(true); }, 60000);
+window.addEventListener("focus", function () { resolveWhatsAppGroupUrl(true); });
+window.addEventListener("pageshow", function (event) {
+  if (event.persisted) resolveWhatsAppGroupUrl(true);
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible") resolveWhatsAppGroupUrl(true);
+});
 
 yearTargets.forEach((target) => {
   target.textContent = new Date().getFullYear();

@@ -45,14 +45,17 @@ function descendants(node) {
 
 function documentStub() {
   const body = new Element("body");
+  const listeners = {};
   return {
     body,
+    listeners,
+    visibilityState: "visible",
     readyState: "complete",
     createElement: tag => new Element(tag),
     querySelectorAll: selector => body.querySelectorAll(selector),
     querySelector: selector => body.querySelector(selector),
     getElementById: id => descendants(body).find(node => node.id === id) || null,
-    addEventListener() {},
+    addEventListener(name, handler) { listeners[name] = handler; },
     execCommand() { return true; }
   };
 }
@@ -89,16 +92,18 @@ function routeHarness(initial = snapshot([group()]), userAgent = "Desktop") {
   const alerts = [];
   const timers = [];
   const opened = [];
+  const listeners = {};
+  let routeCalls = 0;
   let response = initial;
   const window = {
     location: { href: "https://example.test/" },
     FreeIslandPublicData: {
-      get(forceRefresh, options) {
-        assert.equal(forceRefresh, true);
-        assert.equal(options.allowStale, false);
+      getRoute() {
+        routeCalls += 1;
         return response instanceof Error ? Promise.reject(response) : Promise.resolve(response);
       }
     },
+    addEventListener(name, handler) { listeners[name] = handler; },
     setInterval() {},
     setTimeout(callback) { timers.push(callback); },
     alert(message) { alerts.push(message); },
@@ -110,7 +115,7 @@ function routeHarness(initial = snapshot([group()]), userAgent = "Desktop") {
   };
   const navigator = { userAgent, clipboard: { writeText(url) { clipboard.push(url); return Promise.resolve(); } } };
   const context = runSource("script.js", { window, document, navigator, setTimeout: window.setTimeout });
-  return { context, window, document, link, status, clipboard, alerts, timers, opened, setResponse(value) { response = value; } };
+  return { context, window, document, link, status, clipboard, alerts, timers, opened, listeners, routeCalls: () => routeCalls, setResponse(value) { response = value; } };
 }
 
 async function settle() { await new Promise(resolve => setImmediate(resolve)); }
@@ -129,6 +134,44 @@ async function routingTests() {
   for (const capacity_limit of [null, "", true, 0, -1, 1025, 1.5]) assert.equal(select([group({ capacity_limit })]), "");
   assert.equal(select([group({ members: "12", capacity_limit: "990" })]), FIRST);
   checks += 19;
+
+  // Equal default priorities must follow group numbers, not UUID order.
+  const numbered = [10, 4, 3, 2, 1].map(number => group({
+    name: "Free Island Promoções [" + String(number).padStart(2, "0") + "]",
+    destination_id: String(20 - number),
+    invite_url: "https://chat.whatsapp.com/NumberedGroupCode00000" + number,
+    members: number < 4 ? 990 : 40,
+  }));
+  assert.equal(select(numbered), numbered.find(g => g.name.includes("[04]")).invite_url);
+  for (const number of [3, 2, 1]) {
+    const previous = numbered.find(g => g.name.includes("[0" + number + "]"));
+    previous.members = 989;
+    harness.setResponse(snapshot(numbered));
+    assert.equal(await harness.window.FreeIslandResolveWhatsAppGroup(true), previous.invite_url);
+    assert.equal(harness.link.href, previous.invite_url);
+  }
+  numbered.forEach(g => { g.members = 990; });
+  assert.equal(select(numbered), "");
+  numbered.forEach(g => { g.members = 40; });
+  numbered[0].priority = 1;
+  assert.equal(select(numbered), numbered[0].invite_url);
+  assert.equal(select([group({ status: "stale" })]), "");
+  checks += 10;
+
+  const calls = harness.routeCalls();
+  harness.listeners.focus();
+  await settle();
+  harness.listeners.pageshow({ persisted: true });
+  await settle();
+  harness.document.listeners.visibilitychange();
+  await settle();
+  assert.equal(harness.routeCalls(), calls + 3);
+  harness.document.visibilityState = "hidden";
+  harness.document.listeners.visibilitychange();
+  harness.listeners.pageshow({ persisted: false });
+  await settle();
+  assert.equal(harness.routeCalls(), calls + 3);
+  checks += 2;
 
   const normalize = harness.context.normalizeWhatsAppGroupUrl;
   assert.equal(normalize(FIRST + "/"), FIRST);
@@ -215,7 +258,7 @@ function publicDataHarness() {
   runSource("public-data.js", {
     window,
     AbortController: AbortControllerStub,
-    fetch() { return new Promise((resolve, reject) => pending.push({ resolve, reject })); }
+    fetch(url, options) { return new Promise((resolve, reject) => pending.push({ resolve, reject, url, options })); }
   });
   return { client: window.FreeIslandPublicData, pending };
 }
@@ -257,6 +300,24 @@ async function publicDataTests() {
   harness.pending.at(-1).resolve({ ok: true, json: () => Promise.resolve(snapshot([], { operation_slug: "wrong" })) });
   assert.equal((await malformedResult)[0].status, "rejected");
   checks += 2;
+
+  const display = harness.client.get(false);
+  const route = harness.client.getRoute();
+  assert.equal(harness.client.getRoute(), route);
+  assert.match(harness.pending.at(-1).url, /\?routing=1$/);
+  assert.equal(harness.pending.at(-1).options.cache, "no-store");
+  const routePayload = snapshot([group({ members: 990 })]);
+  harness.pending.at(-1).resolve({ ok: true, json: () => Promise.resolve(routePayload) });
+  assert.equal((await route).audience.whatsapp_groups[0].members, 990);
+  assert.deepEqual((await display).audience.whatsapp_groups, []);
+  const reopened = harness.client.getRoute();
+  harness.pending.at(-1).resolve({ ok: true, json: () => Promise.resolve(snapshot([group({ members: 989 })])) });
+  assert.equal((await reopened).audience.whatsapp_groups[0].members, 989);
+  const failedRoute = harness.client.getRoute();
+  const failure = assert.rejects(failedRoute, /routing_offline/);
+  harness.pending.at(-1).reject(new Error("routing_offline"));
+  await failure;
+  checks += 7;
 }
 
 function promotionsHarness(payload) {
