@@ -38,6 +38,9 @@ A rota legada `https://freeisland.onrender.com/r/?s=<slug>` continua válida.
 
 ## Banco do redirecionador
 
+Os eventos publicitários, consentimento, diagnóstico e passos de teste estão em
+[docs/meta-events.md](docs/meta-events.md).
+
 Execute `supabase-short-links.sql` no projeto Supabase usado pelo scraper. O
 script é idempotente e cria/atualiza:
 

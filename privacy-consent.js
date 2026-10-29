@@ -1,19 +1,24 @@
 (function () {
   "use strict";
+  if (window.FreeIslandPrivacy) return;
 
   var STORAGE_KEY = "fi_privacy_consent_v1";
   var ACCEPTED = "analytics";
   var ESSENTIAL = "essential";
   var scriptNode = document.currentScript || document.querySelector('script[src*="privacy-consent.js"]');
   var scriptBase = scriptNode && scriptNode.src ? scriptNode.src : new URL("privacy-consent.js", window.location.href).toString();
-  var loaded = false;
+  var memoryChoice = "";
+  var loading = {};
+  var attempts = {};
+  var retryTimer = null;
 
   function readChoice() {
+    if (memoryChoice) return memoryChoice;
     try {
       var value = window.localStorage.getItem(STORAGE_KEY);
-      return value === ACCEPTED || value === ESSENTIAL ? value : "";
+      return value === ACCEPTED || value === ESSENTIAL ? value : memoryChoice;
     } catch (error) {
-      return "";
+      return memoryChoice;
     }
   }
 
@@ -31,32 +36,41 @@
     } catch (error) {}
     ["_fbp", "_fbc"].forEach(function (name) {
       document.cookie = name + "=; Max-Age=0; path=/; SameSite=Lax";
+      [window.location.hostname, "." + window.location.hostname].forEach(function (domain) {
+        document.cookie = name + "=; Max-Age=0; path=/; domain=" + domain + "; SameSite=Lax";
+      });
     });
   }
 
   function loadScript(relativePath) {
-    return new Promise(function (resolve, reject) {
+    if (loading[relativePath]) return loading[relativePath];
+    loading[relativePath] = new Promise(function (resolve, reject) {
       var source = new URL(relativePath, scriptBase).toString();
-      var existing = document.querySelector('script[data-privacy-source="' + relativePath + '"]');
-      if (existing) {
-        resolve();
-        return;
-      }
       var node = document.createElement("script");
       node.src = source;
       node.async = true;
       node.dataset.privacySource = relativePath;
       node.addEventListener("load", resolve, { once: true });
-      node.addEventListener("error", reject, { once: true });
+      node.addEventListener("error", function () { node.remove(); reject(new Error("optional_script_unavailable")); }, { once: true });
       document.head.appendChild(node);
+    }).catch(function (error) {
+      delete loading[relativePath];
+      throw error;
     });
+    return loading[relativePath];
   }
 
   function enableOptionalAnalytics() {
-    if (loaded) return;
-    loaded = true;
-    loadScript("fi.js?v=20260831_2").catch(function () {});
-    loadScript("meta-events.js?v=20260831_2").catch(function () {});
+    if (readChoice() !== ACCEPTED) return;
+    ["fi.js?v=20261029_1", "meta-events.js?v=20261029_1"].forEach(function (source) {
+      if (loading[source] || (attempts[source] || 0) >= 2) return;
+      attempts[source] = (attempts[source] || 0) + 1;
+      loadScript(source).catch(function () {
+        if (readChoice() === ACCEPTED && !retryTimer) {
+          retryTimer = window.setTimeout(function () { retryTimer = null; enableOptionalAnalytics(); }, 1500);
+        }
+      });
+    });
   }
 
   function removeBanner() {
@@ -65,11 +79,18 @@
   }
 
   function choose(value) {
+    memoryChoice = value;
     saveChoice(value);
     removeBanner();
-    if (value === ACCEPTED) enableOptionalAnalytics();
-    else clearOptionalIdentifiers();
     document.dispatchEvent(new CustomEvent("freeisland:privacy-choice", { detail: { choice: value } }));
+    if (value === ACCEPTED) {
+      attempts = {};
+      enableOptionalAnalytics();
+      if (window.FreeIslandMetaEvents) window.FreeIslandMetaEvents.retry();
+    } else {
+      if (retryTimer) { window.clearTimeout(retryTimer); retryTimer = null; }
+      clearOptionalIdentifiers();
+    }
   }
 
   function privacyUrl() {
@@ -100,9 +121,6 @@
   }
 
   function openSettings() {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch (error) {}
     showBanner();
   }
 
@@ -122,6 +140,17 @@
     getChoice: readChoice,
     open: openSettings
   };
+
+  window.addEventListener("online", function () { attempts = {}; enableOptionalAnalytics(); });
+  window.addEventListener("storage", function (event) {
+    if (event.key !== STORAGE_KEY) return;
+    memoryChoice = event.newValue === ACCEPTED || event.newValue === ESSENTIAL ? event.newValue : "";
+    document.dispatchEvent(new CustomEvent("freeisland:privacy-choice", { detail: { choice: memoryChoice } }));
+    if (memoryChoice === ACCEPTED) enableOptionalAnalytics();
+    else clearOptionalIdentifiers();
+    if (memoryChoice) removeBanner();
+    else showBanner();
+  });
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

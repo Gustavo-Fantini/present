@@ -141,6 +141,16 @@ function makeAndroidIntent(url) {
   }
 }
 
+function reportWhatsAppRedirect(element, action) {
+  // Metrics are optional; an unavailable event API must never block the invite.
+  try {
+    if (typeof CustomEvent !== "function" || typeof document.dispatchEvent !== "function") return;
+    document.dispatchEvent(new CustomEvent("freeisland:whatsapp-redirect", {
+      detail: { element: element, action: action || "open" }
+    }));
+  } catch (error) {}
+}
+
 function showJoinHelp() {
   try {
     if (!activeWhatsAppGroupUrl) return;
@@ -212,6 +222,7 @@ function showJoinHelp() {
         }
         var target = groupUrl;
         if (isAndroid()) target = makeAndroidIntent(groupUrl);
+        reportWhatsAppRedirect(document.querySelector("[data-whatsapp-link]"), "retry");
         window.location.href = target;
       });
     };
@@ -312,6 +323,7 @@ function applyWhatsAppLinks(root) {
         var status = document.querySelector("[data-whatsapp-status]");
         if (status) status.hidden = true;
         var target = isAndroid() && isInAppBrowser() ? makeAndroidIntent(groupUrl) : groupUrl;
+        reportWhatsAppRedirect(link, "open");
         if (pendingWindow && !pendingWindow.closed && target === groupUrl) {
           pendingWindow.location.replace(groupUrl);
         } else {

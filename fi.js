@@ -1,5 +1,7 @@
 /* Free Island session tracking: 1 row per access (page_view_id), ES5 + XHR. */
 (function () {
+  if (window.__FI_SESSION_ANALYTICS_STARTED) return;
+  window.__FI_SESSION_ANALYTICS_STARTED = true;
   try {
     window.__FI_SCRIPT_LOADED = true;
   } catch (e) {}
@@ -97,6 +99,7 @@
 
   function canSend() {
     return (
+      window.FreeIslandPrivacy && window.FreeIslandPrivacy.getChoice() === "analytics" &&
       CONFIG.enabled &&
       typeof CONFIG.supabaseUrl === "string" &&
       CONFIG.supabaseUrl.indexOf("https://") === 0 &&
