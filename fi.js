@@ -108,7 +108,7 @@
     );
   }
 
-  function postUpsert(row, cb) {
+  function postUpsert(row, cb, keepalive) {
     try {
       var url =
         CONFIG.supabaseUrl.replace(/\/$/, "") +
@@ -116,17 +116,36 @@
         encodeURIComponent(CONFIG.table) +
         "?on_conflict=page_view_id";
 
+      var headers = { apikey: CONFIG.supabaseAnonKey, Authorization: "Bearer " + CONFIG.supabaseAnonKey,
+        "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" };
+      var body = JSON.stringify(row);
+      if (keepalive && typeof window.fetch === "function" && body.length < 60000) {
+        window.fetch(url, { method: "POST", headers: headers, body: body, keepalive: true,
+          credentials: "omit", cache: "no-store" }).then(function (response) {
+          return response.text().then(function (text) { cb(response.status, text); });
+        }).catch(function () { cb(0, "network_error"); });
+        return;
+      }
       var xhr = new XMLHttpRequest();
+      var completed = false;
+      function finish(status, text) {
+        if (completed) return;
+        completed = true;
+        cb(status, text);
+      }
       xhr.open("POST", url, true);
+      xhr.timeout = 15000;
       xhr.setRequestHeader("apikey", CONFIG.supabaseAnonKey);
       xhr.setRequestHeader("Authorization", "Bearer " + CONFIG.supabaseAnonKey);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.setRequestHeader("Prefer", "resolution=merge-duplicates,return=minimal");
       xhr.onreadystatechange = function () {
         if (xhr.readyState !== 4) return;
-        cb(xhr.status, xhr.responseText || "");
+        finish(xhr.status, xhr.responseText || "");
       };
-      xhr.send(JSON.stringify(row));
+      xhr.onerror = function () { finish(0, "network_error"); };
+      xhr.ontimeout = function () { finish(0, "network_timeout"); };
+      xhr.send(body);
     } catch (e) {
       cb(0, String(e && e.message ? e.message : e));
     }
@@ -157,6 +176,13 @@
   var flushTimer = null;
   var flushPendingReason = null;
   var lastFlushAt = 0;
+  var requestSequence = 0;
+  var lastCompletedSequence = 0;
+  var lastHttpStatus = null;
+  var lastSuccessAt = null;
+  var lastReason = "";
+  var retryTimer = null;
+  var retryCount = 0;
 
   function computeScrollPct() {
     try {
@@ -263,16 +289,34 @@
 
   function flush(reason) {
     if (!canSend()) return;
+    var sequence = ++requestSequence;
     var row = buildRow(reason);
     flushedOnce = true;
     lastStatus = "sending";
     lastErr = "";
+    lastReason = reason || "";
     renderDebug();
     postUpsert(row, function (status, text) {
+      if (sequence < lastCompletedSequence) return;
+      lastCompletedSequence = sequence;
+      lastHttpStatus = status;
       lastStatus = "http_" + String(status);
-      if (status < 200 || status >= 300) lastErr = (text || "").slice(0, 220);
+      if (status >= 200 && status < 300) {
+        lastSuccessAt = new Date().toISOString();
+        retryCount = 0;
+        if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      } else {
+        var message = text || "network_error";
+        try { var error = JSON.parse(message); message = [error.code, error.message].filter(Boolean).join(": "); } catch (e) {}
+        lastErr = String(message).slice(0, 220);
+        if ((status === 0 || status === 429 || status >= 500) && retryCount < 2 && !retryTimer &&
+            reason !== "pagehide" && reason !== "beforeunload") {
+          retryCount += 1;
+          retryTimer = setTimeout(function () { retryTimer = null; flush("retry"); }, retryCount * 1500);
+        }
+      }
       renderDebug();
-    });
+    }, ["pagehide", "beforeunload", "hidden", "whatsapp_redirect"].indexOf(reason) !== -1);
   }
 
   function scheduleFlush(reason, delayMs) {
@@ -309,6 +353,7 @@
     document.addEventListener(
       "click",
       function (evt) {
+        if (!canSend()) return;
         var t = evt && evt.target ? evt.target : null;
         if (!t) return;
 
@@ -330,15 +375,6 @@
         } catch (e) {}
 
         // Basic redirect inference: external navigation or WhatsApp/Instagram targets.
-        try {
-          var isWhatsapp = node.getAttribute("data-whatsapp-link") != null;
-          if (isWhatsapp) {
-            whatsappClicks += 1;
-            redirectedToWhatsapp = true;
-            externalRedirects += 1;
-          }
-        } catch (e) {}
-
         try {
           if (href && href.indexOf("instagram.com/") !== -1) {
             instagramClicks += 1;
@@ -374,6 +410,15 @@
     });
     computeScrollPct();
     instrumentClicks();
+    document.addEventListener("freeisland:whatsapp-redirect", function (event) {
+      var element = event.detail && event.detail.element;
+      if (!element || !element.hasAttribute("data-whatsapp-link") || !canSend()) return;
+      whatsappClicks += 1;
+      redirectedToWhatsapp = true;
+      externalRedirects += 1;
+      flush("whatsapp_redirect");
+    });
+    window.addEventListener("online", function () { retryCount = 0; flush("online"); });
 
     // Initial upsert so you always get at least 1 row per access.
     flush("page_view");
@@ -405,6 +450,15 @@
     }, 2000);
   }
 
+  window.FreeIslandSessionAnalytics = {
+    getStatus: function () {
+      return { table: CONFIG.table, project_ref: CONFIG.supabaseUrl.split("//")[1].split(".")[0],
+        consent_allowed: !!canSend(), last_http_status: lastHttpStatus, last_success_at: lastSuccessAt,
+        requests_started: requestSequence, last_flush_reason: lastReason, error: lastErr || null,
+        state: !canSend() ? "consent_required" : lastStatus === "sending" ? "sending" :
+          lastHttpStatus >= 200 && lastHttpStatus < 300 ? "recorded" : lastErr ? "error" : "idle" };
+    }
+  };
   var inited = false;
   function safeInit() {
     if (inited) return;

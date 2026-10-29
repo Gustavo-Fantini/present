@@ -21,7 +21,7 @@ def check(name,value):
     checks.append({'name':name,'passed':bool(value)})
     assert value,name
 
-def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,storage_blocked=False,real_sdk=False):
+def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,storage_blocked=False,real_sdk=False,debug=False,database_status=201,database_failures=0):
     options={'viewport':{'width':width,'height':844},'service_workers':'block'}
     if real_sdk:
         # The official SDK excludes HeadlessChrome from measurement. Emulate the
@@ -30,7 +30,7 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
     context=browser.new_context(**options)
     state={'groups':[{'name':'Free Island [01]','destination_id':'1','priority':1,'members':989,'capacity_limit':990,
                      'status':'fresh','landing_enabled':True,'operation_slug':OP,'invite_url':'https://chat.whatsapp.com/IsolatedGroupCode00000001'}],
-           'sdk_requests':0,'optional_requests':0,'writes':[],'errors':[],'requests':[],'wire':[],'console':[],'route_failure':False}
+           'sdk_requests':0,'optional_requests':0,'writes':[],'database_requests':[],'errors':[],'requests':[],'wire':[],'console':[],'route_failure':False}
     init='''window.__navigations=[];window.open=function(){return {closed:false,opener:null,close:function(){this.closed=true;},location:{replace:function(url){window.__navigations.push(url);}}};};'''
     if choice:init+='localStorage.setItem("fi_privacy_consent_v1",'+json.dumps(choice)+');'
     if storage_blocked:init+='Object.defineProperty(Storage.prototype,"getItem",{value:function(){throw new Error("Blocked");}});Object.defineProperty(Storage.prototype,"setItem",{value:function(){throw new Error("Blocked");}});'
@@ -53,8 +53,14 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
                   'audience':{'status':'fresh','total_members':0,'whatsapp_groups':state['groups']}}
             route.fulfill(status=503 if state['route_failure'] else 200,content_type='application/json',body=json.dumps(body),headers={'Access-Control-Allow-Origin':ORIGIN});return
         if url.hostname and url.hostname.endswith('.supabase.co'):
-            if req.method=='POST':state['writes'].append(json.loads(req.post_data or '{}'))
-            route.fulfill(status=201,content_type='application/json',body='[]');return
+            headers={'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Headers':'apikey, authorization, content-type, prefer','Access-Control-Allow-Methods':'POST, OPTIONS'}
+            if req.method=='OPTIONS':route.fulfill(status=204,headers=headers,body='');return
+            if req.method=='POST':
+                row=json.loads(req.post_data or '{}');state['writes'].append(row)
+                state['database_requests'].append({'reason':row.get('flush_reason'),'transport':req.resource_type})
+            status=503 if len(state['writes'])<=database_failures else database_status
+            body=json.dumps({'code':'42501','message':'permission denied for table page_sessions'}) if status==403 else '[]'
+            route.fulfill(status=status,headers=headers,content_type='application/json',body=body);return
         if req.url.startswith(ORIGIN+'/'):
             if url.path=='/meta-events.js':
                 state['optional_requests']+=1
@@ -67,7 +73,7 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
     context.route('**/*',intercept)
     page=context.new_page();page.on('pageerror',lambda error:state['errors'].append(str(error)))
     page.on('console',lambda message:state['console'].append(message.text) if message.type in ['warning','error'] else None)
-    page.goto(ORIGIN+'/',wait_until='domcontentloaded')
+    page.goto(ORIGIN+('/?debugMeta=true' if debug else '/'),wait_until='domcontentloaded')
     page.evaluate('''window.addEventListener('click',function(e){if(e.target.closest('[data-meta-event="telegram"],[data-meta-event="offers"]')){window.__defaultBeforeHarness=e.defaultPrevented;e.preventDefault();}});''')
     return context,page,state
 
@@ -81,6 +87,7 @@ with sync_playwright() as p:
         context,page,state=fixture(browser,width)
         page.locator('[data-consent-accept]').wait_for()
         check(label+'fresh visit does not load pixel',state['sdk_requests']==0 and not state['writes'])
+        check(label+'normal visit has no diagnostics panel',page.locator('#fi-meta-diagnostics').count()==0)
         page.locator('[data-consent-essential]').click()
         page.locator('[data-meta-event="telegram"]').first.click()
         check(label+'essential choice does not track',state['sdk_requests']==0 and not state['writes'])
@@ -140,6 +147,48 @@ with sync_playwright() as p:
     check('blocked sdk retries bounded',state['sdk_requests']==2)
     page.evaluate('FreeIslandPrivacy.essentialOnly()')
     check('withdrawal drops undelivered queued events',page.evaluate('fbq.queue.every(x=>x[0]==="consent")'))
+    context.close()
+    for width in [390,1440]:
+        context,page,state=fixture(browser,width=width,debug=True)
+        page.locator('#fi-meta-diagnostics').wait_for()
+        check(str(width)+' diagnostic alone does not authorize metrics',state['sdk_requests']==0 and not state['writes'])
+        page.locator('[data-diagnostic-accept]').click();ready(page)
+        page.wait_for_function('window.FreeIslandSessionAnalytics && FreeIslandSessionAnalytics.getStatus().state==="recorded"')
+        page.wait_for_function('document.querySelector("[data-diagnostic-database]").textContent.includes("201")')
+        check(str(width)+' database response visible',page.locator('[data-diagnostic-database]').inner_text().find('201')>=0)
+        check(str(width)+' database table and project identified',page.evaluate('FreeIslandSessionAnalytics.getStatus().table')=='page_sessions' and page.evaluate('FreeIslandSessionAnalytics.getStatus().project_ref')=='qpzwinntrphqaabatoaf')
+        page.evaluate('''() => {fbq.getState=()=>({pixels:[{id:'1479287410507022',eventCount:2,userData:{email:'NEVER_COPY_EMAIL'}}]});}''')
+        report=page.evaluate('FreeIslandMetricsDiagnostics.getStatus()')
+        check(str(width)+' report excludes credentials and SDK user data','eyJ' not in json.dumps(report) and 'NEVER_COPY_EMAIL' not in json.dumps(report))
+        page.evaluate('''() => {window.__keepalive=[];const nativeFetch=fetch;window.fetch=function(url,options){if(String(url).includes('/rest/v1/page_sessions'))window.__keepalive.push(options.keepalive===true);return nativeFetch.apply(this,arguments);};window.dispatchEvent(new Event('pagehide'));}''')
+        page.wait_for_function('window.__keepalive.length>0')
+        check(str(width)+' leaving page uses keepalive',page.evaluate('window.__keepalive[0]') is True)
+        check(str(width)+' retries and checkpoints share one access id',len({row['page_view_id'] for row in state['writes']})==1)
+        check(str(width)+' diagnostic does not overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+        page.screenshot(path=str(OUT/('diagnostic-'+str(width)+'.png')),full_page=False)
+        check(str(width)+' diagnostic error free',not state['errors'])
+        context.close()
+    context,page,state=fixture(browser,choice='analytics',debug=True,sdk_failures=100)
+    page.wait_for_function('window.FreeIslandMetaEvents && FreeIslandMetaEvents.getStatus().error==="meta_library_unavailable"')
+    page.wait_for_function('document.querySelector("[data-diagnostic-summary]").textContent.includes("meta_library_unavailable")')
+    check('diagnostic identifies Meta library failure',page.locator('[data-diagnostic-summary]').inner_text().find('meta_library_unavailable')>=0)
+    check('Meta failure does not disable database writes',page.evaluate('FreeIslandSessionAnalytics.getStatus().last_http_status')==201)
+    context.close()
+    context,page,state=fixture(browser,choice='analytics',debug=True,optional_failures=100)
+    page.wait_for_timeout(2500)
+    check('diagnostic identifies first party event script failure','blocked_or_failed' in page.evaluate('JSON.stringify(FreeIslandPrivacy.getStatus())'))
+    check('first party event script failure leaves database working',page.evaluate('FreeIslandSessionAnalytics.getStatus().last_http_status')==201)
+    context.close()
+    context,page,state=fixture(browser,choice='analytics',debug=True,database_status=403)
+    page.wait_for_function('window.FreeIslandSessionAnalytics && FreeIslandSessionAnalytics.getStatus().last_http_status===403')
+    page.wait_for_function('document.querySelector("[data-diagnostic-database]").textContent.includes("403")')
+    check('database policy errors are visible',page.locator('[data-diagnostic-database]').inner_text().find('42501')>=0)
+    check('database failure does not disable Meta',len(events(page,'PageView'))==1)
+    context.close()
+    context,page,state=fixture(browser,choice='analytics',database_failures=1)
+    page.wait_for_function('window.FreeIslandSessionAnalytics && FreeIslandSessionAnalytics.getStatus().last_http_status===201')
+    check('transient database error retried',any(item['reason']=='retry' for item in state['database_requests']))
+    check('database retry keeps same access id',len({row['page_view_id'] for row in state['writes']})==1)
     context.close()
     context,page,state=fixture(browser,choice='analytics')
     ready(page);page.reload(wait_until='domcontentloaded');ready(page)

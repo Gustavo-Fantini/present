@@ -11,6 +11,7 @@
   var loading = {};
   var attempts = {};
   var retryTimer = null;
+  var scriptStates = {};
 
   function readChoice() {
     if (memoryChoice) return memoryChoice;
@@ -44,14 +45,15 @@
 
   function loadScript(relativePath) {
     if (loading[relativePath]) return loading[relativePath];
+    scriptStates[relativePath] = "loading";
     loading[relativePath] = new Promise(function (resolve, reject) {
       var source = new URL(relativePath, scriptBase).toString();
       var node = document.createElement("script");
       node.src = source;
       node.async = true;
       node.dataset.privacySource = relativePath;
-      node.addEventListener("load", resolve, { once: true });
-      node.addEventListener("error", function () { node.remove(); reject(new Error("optional_script_unavailable")); }, { once: true });
+      node.addEventListener("load", function () { scriptStates[relativePath] = "loaded"; resolve(); }, { once: true });
+      node.addEventListener("error", function () { scriptStates[relativePath] = "blocked_or_failed"; node.remove(); reject(new Error("optional_script_unavailable")); }, { once: true });
       document.head.appendChild(node);
     }).catch(function (error) {
       delete loading[relativePath];
@@ -62,7 +64,7 @@
 
   function enableOptionalAnalytics() {
     if (readChoice() !== ACCEPTED) return;
-    ["fi.js?v=20261029_1", "meta-events.js?v=20261029_1"].forEach(function (source) {
+    ["fi.js?v=20261029_2", "meta-events.js?v=20261029_1"].forEach(function (source) {
       if (loading[source] || (attempts[source] || 0) >= 2) return;
       attempts[source] = (attempts[source] || 0) + 1;
       loadScript(source).catch(function () {
@@ -125,6 +127,9 @@
   }
 
   function init() {
+    if (new URLSearchParams(window.location.search).get("debugMeta") === "true") {
+      loadScript("meta-diagnostics.js?v=20261029_2").catch(function () {});
+    }
     document.querySelectorAll("[data-consent-settings]").forEach(function (button) {
       button.addEventListener("click", openSettings);
     });
@@ -138,6 +143,8 @@
     accept: function () { choose(ACCEPTED); },
     essentialOnly: function () { choose(ESSENTIAL); },
     getChoice: readChoice,
+    getStatus: function () { return { choice: readChoice(), scripts: Object.assign({}, scriptStates) }; },
+    retry: function () { attempts = {}; enableOptionalAnalytics(); },
     open: openSettings
   };
 

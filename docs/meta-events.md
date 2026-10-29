@@ -48,6 +48,33 @@ carregamento. `FreeIslandMetaEvents.retry()` permite tentar novamente após
 uma falha de rede. Uma biblioteca carregada ou chamada enfileirada não comprova
 o recebimento na conta; essa confirmação acontece em **Eventos de teste**.
 
+O link `?debugMeta=true` também mostra um painel no início da página, inclusive
+quando o arquivo de eventos ou a biblioteca da Meta não carrega. **Copiar
+diagnóstico** reúne consentimento, estado dos arquivos, chamadas do Pixel,
+recursos de rede observados e a resposta do Supabase. O relatório exclui chaves,
+cookies, identificadores dos visitantes e dados de identificação do SDK. A
+ausência de um status HTTP em recurso externo não comprova bloqueio: o navegador
+pode não expor esse campo. O painel não aparece para visitas normais.
+
+## Tabela de métricas da landing
+
+`fi.js` grava em `page_sessions` no projeto `qpzwinntrphqaabatoaf`, separado do
+projeto das promoções e dos links. Mantém os campos existentes e uma linha por
+acesso: checkpoints e novas tentativas usam o mesmo `page_view_id`.
+
+Gravações ao sair, ocultar a página ou encaminhar ao WhatsApp usam `fetch` com
+`keepalive` quando disponível. Falhas transitórias de rede, HTTP 429 e erros de
+servidor permitem até duas novas tentativas, sem criar acessos duplicados. Erros
+de autorização e de estrutura da tabela aparecem no diagnóstico e não acionam
+essa repetição. Os cliques brutos continuam em `click_counts`; o encaminhamento
+ao WhatsApp só incrementa os respectivos campos após confirmar um convite válido.
+
+No console, `FreeIslandSessionAnalytics.getStatus()` informa a tabela, projeto,
+último status HTTP e último sucesso, sem expor a chave pública nem os dados da
+linha. O painel de diagnóstico mostra uma gravação aceita separadamente do
+carregamento da Meta. Essa coleta continua condicionada a **Aceitar métricas**;
+ela não representa todos os acessos sem consentimento ou com bloqueadores.
+
 ## Verificações automatizadas
 
 ```text
