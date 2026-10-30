@@ -7,7 +7,7 @@
   panel.style.cssText = "max-width:720px;margin:16px auto;padding:18px;border:2px solid #216544;border-radius:16px;background:#fff;color:#183b2d;font:14px/1.5 system-ui;box-sizing:border-box;overflow-wrap:anywhere";
   panel.innerHTML = '<strong style="font-size:18px">Diagnóstico de métricas</strong>' +
     '<p data-diagnostic-summary role="status" aria-live="polite">Verificando…</p>' +
-    '<p data-diagnostic-meta></p><p data-diagnostic-database></p>' +
+    '<p data-diagnostic-meta></p><p data-diagnostic-database></p><p data-diagnostic-anonymous></p>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<button type="button" data-diagnostic-accept>Aceitar métricas</button>' +
     '<button type="button" data-diagnostic-retry>Tentar novamente</button>' +
@@ -40,8 +40,9 @@
           response_status: entry.responseStatus || "not_exposed" };
       });
     } catch (error) {}
-    return { version: "20261029_2", page: location.origin + location.pathname,
+    return { version: "20261029_3", page: location.origin + location.pathname,
       privacy: privacy, meta: meta, supabase: analytics, sdk_pixels: pixels, meta_resource_entries: requests,
+      anonymous_page_views: window.FreeIslandAnonymousPageViews ? window.FreeIslandAnonymousPageViews.getStatus() : null,
       browser: navigator.userAgent, online: navigator.onLine,
       global_privacy_control: navigator.globalPrivacyControl === true,
       do_not_track: navigator.doNotTrack || null };
@@ -64,6 +65,10 @@
       database.state === "recorded" ? "Supabase: gravação aceita (HTTP " + database.last_http_status + ") na tabela " + database.table + "." :
       database.state === "error" ? "Supabase: falha na gravação (HTTP " + database.last_http_status + "). " + (database.error || "") :
       database.state === "consent_required" ? "Supabase: coleta desativada pela preferência de métricas." : "Supabase: aguardando resposta da gravação.";
+    var anonymous = report.anonymous_page_views;
+    panel.querySelector("[data-diagnostic-anonymous]").textContent = !anonymous ? "Total anônimo: aguardando contador." :
+      anonymous.state === "recorded" ? "Total anônimo: acesso contabilizado sem identificadores (HTTP " + anonymous.last_http_status + ")." :
+      anonymous.state === "error" ? "Total anônimo: falha na contagem. " + anonymous.error : "Total anônimo: " + anonymous.state + ".";
     panel.querySelector("[data-diagnostic-json]").textContent = JSON.stringify(report, null, 2);
     return report;
   }

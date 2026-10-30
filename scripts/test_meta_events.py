@@ -21,7 +21,7 @@ def check(name,value):
     checks.append({'name':name,'passed':bool(value)})
     assert value,name
 
-def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,storage_blocked=False,real_sdk=False,debug=False,database_status=201,database_failures=0):
+def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,storage_blocked=False,real_sdk=False,debug=False,database_status=201,database_failures=0,anonymous_status=204):
     options={'viewport':{'width':width,'height':844},'service_workers':'block'}
     if real_sdk:
         # The official SDK excludes HeadlessChrome from measurement. Emulate the
@@ -30,7 +30,7 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
     context=browser.new_context(**options)
     state={'groups':[{'name':'Free Island [01]','destination_id':'1','priority':1,'members':989,'capacity_limit':990,
                      'status':'fresh','landing_enabled':True,'operation_slug':OP,'invite_url':'https://chat.whatsapp.com/IsolatedGroupCode00000001'}],
-           'sdk_requests':0,'optional_requests':0,'writes':[],'database_requests':[],'errors':[],'requests':[],'wire':[],'console':[],'route_failure':False}
+           'sdk_requests':0,'optional_requests':0,'writes':[],'anonymous_requests':[],'database_requests':[],'errors':[],'requests':[],'wire':[],'console':[],'route_failure':False}
     init='''window.__navigations=[];window.open=function(){return {closed:false,opener:null,close:function(){this.closed=true;},location:{replace:function(url){window.__navigations.push(url);}}};};'''
     if choice:init+='localStorage.setItem("fi_privacy_consent_v1",'+json.dumps(choice)+');'
     if storage_blocked:init+='Object.defineProperty(Storage.prototype,"getItem",{value:function(){throw new Error("Blocked");}});Object.defineProperty(Storage.prototype,"setItem",{value:function(){throw new Error("Blocked");}});'
@@ -55,6 +55,9 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
         if url.hostname and url.hostname.endswith('.supabase.co'):
             headers={'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Headers':'apikey, authorization, content-type, prefer','Access-Control-Allow-Methods':'POST, OPTIONS'}
             if req.method=='OPTIONS':route.fulfill(status=204,headers=headers,body='');return
+            if url.path=='/rest/v1/rpc/freeisland_record_page_view':
+                state['anonymous_requests'].append({'payload':json.loads(req.post_data or '{}'),'referer':req.headers.get('referer'),'cookie':req.headers.get('cookie')})
+                route.fulfill(status=anonymous_status,headers=headers,body='');return
             if req.method=='POST':
                 row=json.loads(req.post_data or '{}');state['writes'].append(row)
                 state['database_requests'].append({'reason':row.get('flush_reason'),'transport':req.resource_type})
@@ -74,6 +77,7 @@ def fixture(browser,width=390,choice=None,sdk_failures=0,optional_failures=0,sto
     page=context.new_page();page.on('pageerror',lambda error:state['errors'].append(str(error)))
     page.on('console',lambda message:state['console'].append(message.text) if message.type in ['warning','error'] else None)
     page.goto(ORIGIN+('/?debugMeta=true' if debug else '/'),wait_until='domcontentloaded')
+    page.wait_for_function('window.FreeIslandAnonymousPageViews && FreeIslandAnonymousPageViews.getStatus().state!=="sending"')
     page.evaluate('''window.addEventListener('click',function(e){if(e.target.closest('[data-meta-event="telegram"],[data-meta-event="offers"]')){window.__defaultBeforeHarness=e.defaultPrevented;e.preventDefault();}});''')
     return context,page,state
 
@@ -88,9 +92,14 @@ with sync_playwright() as p:
         page.locator('[data-consent-accept]').wait_for()
         check(label+'fresh visit does not load pixel',state['sdk_requests']==0 and not state['writes'])
         check(label+'normal visit has no diagnostics panel',page.locator('#fi-meta-diagnostics').count()==0)
+        check(label+'anonymous total counted before choice',len(state['anonymous_requests'])==1)
+        anonymous=state['anonymous_requests'][0]
+        check(label+'anonymous request contains only public path',anonymous['payload']=={'p_page_path':'/'})
+        check(label+'anonymous request excludes cookies and referrer',anonymous['cookie'] is None and anonymous['referer'] is None)
         page.locator('[data-consent-essential]').click()
         page.locator('[data-meta-event="telegram"]').first.click()
         check(label+'essential choice does not track',state['sdk_requests']==0 and not state['writes'])
+        check(label+'anonymous total survives detailed metrics refusal',len(state['anonymous_requests'])==1 and page.evaluate('FreeIslandAnonymousPageViews.getStatus().state')=='recorded')
         page.locator('[data-consent-settings]').first.click();page.locator('[data-consent-accept]').click();ready(page)
         check(label+'correct pixel initialized once',len(events(page,'1479287410507022'))==1)
         check(label+'one pageview and viewcontent',len(events(page,'PageView'))==len(events(page,'ViewContent'))==1)
@@ -147,6 +156,17 @@ with sync_playwright() as p:
     check('blocked sdk retries bounded',state['sdk_requests']==2)
     page.evaluate('FreeIslandPrivacy.essentialOnly()')
     check('withdrawal drops undelivered queued events',page.evaluate('fbq.queue.every(x=>x[0]==="consent")'))
+    context.close()
+    context,page,state=fixture(browser)
+    page.add_script_tag(url=ORIGIN+'/anonymous-page-count.js?v=20261029_3')
+    page.evaluate('''() => {const e=new Event('pageshow');Object.defineProperty(e,'persisted',{value:true});window.dispatchEvent(e);}''')
+    check('duplicate script and history restore do not double count',len(state['anonymous_requests'])==1)
+    check('anonymous total creates no visitor identifiers',page.evaluate('localStorage.getItem("fi_visitor")===null && localStorage.getItem("fi_session")===null'))
+    context.close()
+    context,page,state=fixture(browser,debug=True,anonymous_status=404)
+    page.wait_for_function('document.querySelector("[data-diagnostic-anonymous]").textContent.includes("falha")')
+    check('anonymous migration errors are visible',page.evaluate('FreeIslandAnonymousPageViews.getStatus().last_http_status')==404)
+    check('ambiguous anonymous error is not retried',len(state['anonymous_requests'])==1)
     context.close()
     for width in [390,1440]:
         context,page,state=fixture(browser,width=width,debug=True)

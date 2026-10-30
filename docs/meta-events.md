@@ -58,6 +58,25 @@ pode não expor esse campo. O painel não aparece para visitas normais.
 
 ## Tabela de métricas da landing
 
+O total de acessos é agregado em `page_view_daily`, com somente `day`,
+`page_path`, `page_views` e `updated_at`. O dia é definido pelo servidor no fuso
+de Brasília. `anonymous-page-count.js` envia somente uma página pública aprovada,
+sem query string, referrer, cookies ou identificadores. O contador é independente
+da preferência por métricas detalhadas e não distingue visitantes únicos.
+
+A RPC `freeisland_record_page_view` faz o incremento atômico, restringe origem e
+página e não permite alterações diretas pelo cliente na tabela. Aplique
+`supabase-anonymous-page-views.sql` no projeto `qpzwinntrphqaabatoaf` antes de
+publicar o contador. A migração adiciona a estrutura e preserva `page_sessions`.
+Não há reenvio automático de uma contagem com resposta ambígua, evitando
+duplicação sem introduzir tokens de identificação. O total começa a ser medido
+na ativação: acessos anteriores que não foram registrados não são reconstruídos.
+
+No dashboard, o total vem da soma de `page_views`. Os detalhes abaixo são um
+subconjunto e não entram novamente nessa soma. Filtros por campanha, fonte ou
+visitante se aplicam aos detalhes; o contador anônimo não contém esses atributos.
+O período e a apresentação dos dias usam Brasília.
+
 `fi.js` grava em `page_sessions` no projeto `qpzwinntrphqaabatoaf`, separado do
 projeto das promoções e dos links. Mantém os campos existentes e uma linha por
 acesso: checkpoints e novas tentativas usam o mesmo `page_view_id`.

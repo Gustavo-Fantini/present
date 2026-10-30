@@ -131,7 +131,8 @@ begin
 end;
 $$;
 
-revoke all on function public.freeisland_run_page_session_retention(integer, integer) from public;
+revoke all on function public.freeisland_run_page_session_retention(integer, integer) from public, anon, authenticated;
+grant execute on function public.freeisland_run_page_session_retention(integer, integer) to service_role;
 
 do $$
 declare

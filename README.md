@@ -50,13 +50,18 @@ script é idempotente e cria/atualiza:
 - `short_link_click_stats`: total e divisão por rede nas últimas 24 horas.
 
 O redirecionador legado usa uma chave pública `anon` limitada pela RPC e as
-métricas opcionais usam outra chave `anon`, carregada somente após consentimento.
+métricas da landing usam outra chave pública `anon`. O contador agregado não
+usa identificadores; a coleta detalhada continua condicionada ao consentimento.
 Promoções e lotação dos grupos são entregues por `GET /api/public/landing` sem
 credenciais no payload. A `service_role` permanece exclusivamente no servidor.
 Não existe parâmetro público que aceite uma URL arbitrária, evitando transformar
 o domínio em open redirect.
 
 ## Retenção de métricas
+
+Em instalações existentes, aplique `supabase-restrict-metrics-retention.sql`
+para restringir a execução da retenção a `service_role` e ao proprietário
+`postgres`, usado pelo Cron. Esse ajuste não executa limpeza nem remove dados.
 
 Execute `supabase-page-sessions-retention.sql` uma vez no projeto Supabase das
 métricas da landing (`qpzwinntrphqaabatoaf`), onde existe `page_sessions`. O
@@ -152,7 +157,13 @@ A página atualiza periodicamente:
 - audiência combinada dos destinos em `audience_stats`;
 - promoções mais recentes.
 
-`privacy-consent.js` deixa apenas recursos essenciais ativos por padrão. Somente
+`anonymous-page-count.js` incrementa o total por dia e página em
+`page_view_daily`, sem cookies ou identificadores de visitante. Aplique primeiro
+`supabase-anonymous-page-views.sql` no projeto de métricas. O dashboard deve usar
+`sum(page_views)` para o total; `page_sessions` contém um subconjunto detalhado,
+que não deve ser somado novamente ao total agregado.
+
+`privacy-consent.js` mantém a coleta detalhada desativada por padrão. Somente
 após consentimento ele carrega `fi.js` (métricas próprias em `page_sessions`) e
 `meta-events.js` (Meta Pixel).
 

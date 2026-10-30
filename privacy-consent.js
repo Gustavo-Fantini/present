@@ -109,9 +109,9 @@
     banner.setAttribute("aria-labelledby", "fi-consent-title");
     banner.innerHTML =
       '<div class="consent-copy"><strong id="fi-consent-title">Sua privacidade vem primeiro</strong>' +
-      '<p>Usamos apenas recursos essenciais por padrão. Com sua escolha, podemos ativar métricas próprias e o Meta Pixel para entender o uso do site.</p>' +
+      '<p>Contamos os acessos de forma agregada, sem identificar visitantes. Com sua escolha, ativamos métricas detalhadas e o Meta Pixel.</p>' +
       '<a href="' + privacyUrl() + '">Ler a política de privacidade</a></div>' +
-      '<div class="consent-actions"><button type="button" data-consent-essential>Somente essenciais</button>' +
+      '<div class="consent-actions"><button type="button" data-consent-essential>Somente contagem anônima</button>' +
       '<button type="button" class="consent-accept" data-consent-accept>Aceitar métricas</button></div>';
     banner.querySelector("[data-consent-essential]").addEventListener("click", function () {
       choose(ESSENTIAL);
@@ -128,7 +128,7 @@
 
   function init() {
     if (new URLSearchParams(window.location.search).get("debugMeta") === "true") {
-      loadScript("meta-diagnostics.js?v=20261029_2").catch(function () {});
+      loadScript("meta-diagnostics.js?v=20261029_3").catch(function () {});
     }
     document.querySelectorAll("[data-consent-settings]").forEach(function (button) {
       button.addEventListener("click", openSettings);
